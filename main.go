@@ -7,13 +7,17 @@ import (
 	"os"
 
 	ui "github.com/gizak/termui/v3"
-	"github.com/gizak/termui/v3/widgets"
 	view "github.com/rxOred/unnatural/view"
 )
 
-var binpathFlag = flag.String("path", "", "/path/to/binary")
-var helpFlag = flag.Bool("help", false, "print help and exit")
-var versionFlag = flag.Bool("version", false, "print version and exit")
+var (
+	binpathFlag = flag.String("path", "", "/path/to/binary")
+	helpFlag    = flag.Bool("help", false, "print help and exit")
+	versionFlag = flag.Bool("version", false, "print version and exit")
+
+	av view.AnalysisView
+	ev view.ErrorView
+)
 
 func init() {
 	flag.Usage = func() {
@@ -39,20 +43,11 @@ func main() {
 	}
 	defer ui.Close()
 
-	if len(*binpathFlag) <= 0 {
-		er := widgets.NewParagraph()
-		er.Text = "[Error]\n/path/to/binary not specified\npress any key to exit..."
-		er.SetRect(0, 0, 40, 5)
-		ui.Render(er)
-		for e := range ui.PollEvents() {
-			if e.Type == ui.KeyboardEvent {
-				break
-			}
-		}
-	} else {
-		var v view.View
-		view.InitView(&v, *binpathFlag)
-		v.GotoSigIntState()
-	}
+	// initialize TUIs
+	view.InitAnalysisView(&av, *binpathFlag)
+	view.InitErrorView(&ev)
+
+	// Show Analysis view to the user
+	view.ShowAnalysisView(&av)
 
 }
