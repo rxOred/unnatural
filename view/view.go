@@ -7,12 +7,9 @@ import (
 	"github.com/gizak/termui/v3/widgets"
 )
 
-type View struct {
-	Grid *ui.Grid
-}
-
+// Analysis view
 type AnalysisView struct {
-	v           *View
+	grid        *ui.Grid
 	Header      *widgets.Paragraph
 	Guagebar    *widgets.Gauge
 	SectionList *widgets.List
@@ -21,36 +18,38 @@ type AnalysisView struct {
 	OutData     *widgets.List
 }
 
+// Error view
 type ErrorView struct {
-	v        *View
+	grid     *ui.Grid
 	ErrorBox *widgets.Paragraph
 }
 
-type InfoView struct {
-	v         *View
-	Header    *widgets.Paragraph
-	InfoTable *widgets.Table
-}
-
-func CreateList(border_name string) *widgets.List {
+// creates and return a new list
+func CreateList(title string, border bool, borderfg ui.Color, titlefg ui.Color) *widgets.List {
 	list := widgets.NewList()
 
-	list.Title = border_name
-	list.Border = true
+	list.Title = title
+	list.Border = border
+	list.BorderStyle.Fg = borderfg
+	list.TitleStyle.Fg = titlefg
 
 	return list
 }
 
-func CreateParagraph(title string, text string, border bool) *widgets.Paragraph {
+// creates and return a new paragraph
+func CreateParagraph(title string, text string, border bool, borderfg ui.Color, titlefg ui.Color) *widgets.Paragraph {
 	para := widgets.NewParagraph()
 
 	para.Title = title
 	para.Text = text
 	para.Border = border
+	para.BorderStyle.Fg = borderfg
+	para.TitleStyle.Fg = titlefg
 
 	return para
 }
 
+// creates and return a new guage
 func CreateGuage(title string, percent int, borderfg ui.Color, titlefg ui.Color) *widgets.Gauge {
 	g := widgets.NewGauge()
 
@@ -62,17 +61,9 @@ func CreateGuage(title string, percent int, borderfg ui.Color, titlefg ui.Color)
 	return g
 }
 
-func CreateTable(title string) *widgets.Table {
-	tab := widgets.NewTable()
-
-	tab.Title = title
-
-	return tab
-}
-
-// analysis view
+// Analysis view
 func (av *AnalysisView) SetupAnalysisGrid() {
-	av.v.Grid = ui.NewGrid()
+	av.grid = ui.NewGrid()
 
 	top := ui.NewRow(1.0/8, av.Header)
 	belowtop := ui.NewRow(1.0/8, av.Guagebar)
@@ -83,64 +74,45 @@ func (av *AnalysisView) SetupAnalysisGrid() {
 	)
 	bottom := ui.NewRow(4.0/8, av.OutData)
 
-	av.v.Grid.Set(top, belowtop, mid, bottom)
+	av.grid.Set(top, belowtop, mid, bottom)
 
 	termwidth, termheight := ui.TerminalDimensions()
-	av.v.Grid.SetRect(0, 0, termwidth, termheight-1)
+	av.grid.SetRect(0, 0, termwidth, termheight-1)
 }
 
-func NewAnalysisView(av *AnalysisView, target string) {
+func InitAnalysisView(av *AnalysisView, target string) {
 	text := fmt.Sprintf("\t\tunnatural - Elf anomaly detector and disinfector\t\t\nTarget: %s", target)
-	av.Header = CreateParagraph("", text, true)
-	av.Guagebar = CreateGuage("Analysing", 0, ui.ColorWhite, ui.ColorCyan)
-	av.SectionList = CreateList("Sections")
-	av.SegmentList = CreateList("Segments")
-	av.SymbolList = CreateList("Symbols")
-	av.OutData = CreateList("Analysis report")
+	av.Header = CreateParagraph("", text, true, ui.ColorYellow, ui.ColorCyan)
+	av.Guagebar = CreateGuage("Analysing", 0, ui.ColorYellow, ui.ColorCyan)
+	av.SectionList = CreateList("Sections", true, ui.ColorYellow, ui.ColorCyan)
+	av.SegmentList = CreateList("Segments", true, ui.ColorYellow, ui.ColorCyan)
+	av.SymbolList = CreateList("Symbols", true, ui.ColorYellow, ui.ColorCyan)
+	av.OutData = CreateList("Analysis report", true, ui.ColorMagenta, ui.ColorRed)
 	av.SetupAnalysisGrid()
 }
 
-func (ev *ErrorView) SetupErrorGrid() {
-	ev.v.Grid = ui.NewGrid()
-	body := ui.NewRow(1.0, ev.ErrorBox)
-
-	ev.v.Grid.Set(body)
-	termwidth, termheight := ui.TerminalDimensions()
-	ev.v.Grid.SetRect(0, 0, termwidth, termheight-1)
+func ShowAnalysisView(av *AnalysisView) {
+	ui.Clear()
+	ui.Render(av.grid)
 }
 
 // error view
-func NewErrorView(ev *ErrorView, errmsg string) {
-	ev.ErrorBox = CreateParagraph("Error", errmsg, true)
+func (ev *ErrorView) SetupErrorGrid() {
+	ev.grid = ui.NewGrid()
+	body := ui.NewRow(1.0, ev.ErrorBox)
+
+	ev.grid.Set(body)
+	termwidth, termheight := ui.TerminalDimensions()
+	ev.grid.SetRect(0, 0, termwidth, termheight-1)
+}
+
+func InitErrorView(ev *ErrorView) {
+	ev.ErrorBox = CreateParagraph("Error", "", true, ui.ColorYellow, ui.ColorWhite)
 	ev.SetupErrorGrid()
 }
 
-func (v *View) ShowErrorMsg(errmsg string) {
+func ShowErrorView(ev *ErrorView, errmsg string) {
+	ev.ErrorBox.Text = errmsg
 	ui.Clear()
-	er := widgets.NewParagraph()
-
-	errwindow := ui.NewRow(1.0, er)
-
-	v.Grid.Set(errwindow)
-
-	termwidth, termheight := ui.TerminalDimensions()
-	v.Grid.SetRect(0, 0, termwidth, termheight)
-	ui.Render(v.Grid)
-	v.GotoExitState()
-}
-
-// info view
-func (iv *InfoView) SetupInfoGrid() {
-	iv.v.Grid = ui.NewGrid()
-	header := ui.NewRow(1.0/3, iv.Header)
-	body := ui.NewRow(2.0/3, iv.InfoTable)
-
-	iv.v.Grid.Set(header, body)
-	termwidth, termheight := ui.TerminalDimensions()
-	iv.v.Grid.SetRect(0, 0, termwidth, termheight-1)
-}
-
-func NewInfoView(iv *InfoView) {
-	iv.Header = CreateParagraph("Info View", "", false)
-	iv.InfoTable = CreateTable()
+	ui.Render(ev.grid)
 }
