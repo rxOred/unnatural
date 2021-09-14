@@ -94,6 +94,7 @@ func InitAnalysisView(av *AnalysisView, target string) {
 func ShowAnalysisView(av *AnalysisView) {
 	ui.Clear()
 	ui.Render(av.grid)
+	av.Eventloop()
 }
 
 // error view
@@ -115,4 +116,5 @@ func ShowErrorView(ev *ErrorView, errmsg string) {
 	ev.ErrorBox.Text = errmsg
 	ui.Clear()
 	ui.Render(ev.grid)
+	ev.Eventloop()
 }
