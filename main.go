@@ -49,5 +49,4 @@ func main() {
 
 	// Show Analysis view to the user
 	view.ShowAnalysisView(&av)
-
 }
