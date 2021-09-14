@@ -2,6 +2,7 @@ package parser
 
 import (
 	"debug/elf"
+	"encoding/binary"
 	"errors"
 	"io"
 	"os"
@@ -12,22 +13,26 @@ var (
 	elf_class   string
 )
 
-func ioReader(file string) (io.Reader, err) {
+func ioReader(file string) (io.ReaderAt, error) {
 	r, err := os.Open(file)
 	if err != nil {
 		return nil, err
 	}
+	return r, nil
 }
 
 // i kinda half stole this function from golang source hehe :3
 func openElf(file string) (*elf.File, error) {
-	f, err := ioReader(file)
+
+	r, err := ioReader(file)
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+
+	section_reader := io.NewSectionReader(r, 0, 1<<63-1)
+
 	ident := make([]uint8, 16)
-	if _, err = f.ReadAt(ident[0:], 0); err != nil {
+	if _, err = r.ReadAt(ident[0:], 0); err != nil {
 		return nil, err
 	}
 	if ident[0] != '\x7f' || ident[1] != 'E' || ident[2] != 'L' || ident[3] != 'F' {
@@ -36,6 +41,8 @@ func openElf(file string) (*elf.File, error) {
 
 	ef := new(elf.File)
 	ef.Class = elf.Class(ident[elf.EI_CLASS])
+
+	// we need elf class to select whether to use header32 or header64
 	switch ef.Class.String() {
 	case "ELFCLASS64":
 		elf_class = "64b"
@@ -57,5 +64,18 @@ func openElf(file string) (*elf.File, error) {
 		phnum, shnum         int
 		shstrndx             int // this is the thing that is most important for us to parse section names
 	)
+	switch elf_class {
+	case "32b":
+		hdr := new(elf.Header32)
+		section_reader.Seek(0, io.SeekStart)
+		if err := binary.Read(section_reader, ef.ByteOrder, hdr); err != nil {
+			return nil, errors.New(err.Error())
+		}
 
+		ef.Type = elf.Type(hdr.Type)
+		ef.Machine = elf.Machine(hdr.Machine)
+		ef.Entry = uint64(hdr.Entry)
+
+	case "64b":
+	}
 }
