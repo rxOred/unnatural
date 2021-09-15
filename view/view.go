@@ -5,7 +5,7 @@ import (
 
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
-	"github.com/rxOred/unnatural/parser"
+	parser "github.com/rxOred/unnatural/parser"
 )
 
 // Analysis view
@@ -99,19 +99,17 @@ func InitAnalysisView(av *AnalysisView, ev *ErrorView, file string) {
 	av.OutData = CreateList("Analysis report", true, ui.ColorMagenta, ui.ColorRed)
 	av.SetupAnalysisGrid()
 
-	var p parser.Parser
-	p.Hllo("aaa")
-	f, err := p.InitElf(file)
+	e, err := parser.InitElf(file)
 	if err != nil {
 		ShowErrorView(ev, err.Error())
 	}
 
-	header := p.GetElfHeader(f)
-	sections := p.GetSectionHeaders(f)
-	symbols, err := p.GetSymbols(f)
-	if err != nil {
-		ShowErrorView(ev, err.Error())
-	}
+	var p parser.Parser
+	p = e
+	p.Hllo("aaa")
+	header := p.GetElfHeader()
+	sections := p.GetSectionHeaders()
+	symbols := p.GetSymbols()
 
 	increasePercent(10, av.Guagebar)
 
