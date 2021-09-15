@@ -44,8 +44,8 @@ func main() {
 	defer ui.Close()
 
 	// initialize TUIs
-	view.InitAnalysisView(&av, *binpathFlag)
 	view.InitErrorView(&ev)
+	view.InitAnalysisView(&av, &ev, *binpathFlag)
 
 	// Show Analysis view to the user
 	view.ShowAnalysisView(&av)
