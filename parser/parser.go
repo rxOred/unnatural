@@ -8,61 +8,62 @@ import (
 	"strconv"
 )
 
-var (
-	elf_machine string
-	elf_class   string
-)
-
 type Parser interface {
 	Hllo(i string)
-	InitElf(file string) (*elf.File, error)
-	GetElfHeader(f *elf.File) []string
-	GetSectionHeaders(f *elf.File) []string
-	GetSymbols(f *elf.File) ([]string, error)
+	GetElfHeader() []string
+	GetSectionHeaders() []string
+	GetSymbols() []string
 }
 
-func GetSectionHeaders(f *elf.File) []string {
+type Elf struct {
+	f *elf.File
+}
+
+func (e *Elf) GetSectionHeaders() []string {
 	var arr []string
-	sections := f.Sections
+	sections := e.f.Sections
 	for i := 0; i < len(sections); i++ {
 		arr = append(arr, sections[i].Name)
 	}
 	return arr
 }
 
-func GetSymbols(f *elf.File) ([]string, error) {
-	sym, err := f.Symbols()
-	if err != nil {
-		return nil, err
-	}
+func (e *Elf) GetSymbols() []string {
 	var arr []string
+
+	sym, err := e.f.Symbols()
+	if err != nil {
+		arr = append(arr, "no symbols found")
+		return arr
+	}
 	for i := 0; i < len(sym); i++ {
 		arr = append(arr, sym[i].Name)
 	}
 
-	if f.Type == elf.ET_DYN {
-		dynsym, err := f.DynamicSymbols()
+	if e.f.Type == elf.ET_DYN {
+		dynsym, err := e.f.DynamicSymbols()
 		if err != nil {
-			return arr, err
+			arr = append(arr, "no dynamic symbols found")
+			return arr
 		}
 		for i := 0; i < len(dynsym); i++ {
 			arr = append(arr, dynsym[i].Name)
 		}
 	}
-	return arr, nil
+	return arr
 }
 
-func GetElfHeader(f *elf.File) []string {
+func (e *Elf) GetElfHeader() []string {
 	var arr []string
-	arr = append(arr, f.Class.String())
-	arr = append(arr, f.Data.String())
-	arr = append(arr, f.Version.String())
-	arr = append(arr, f.OSABI.String())
-	arr = append(arr, strconv.Itoa(int(f.ABIVersion)))
-	arr = append(arr, f.ByteOrder.String())
-	arr = append(arr, f.Type.String())
-	arr = append(arr, f.Machine.String())
-	arr = append(arr, strconv.Itoa(int(f.Entry)))
+	arr = append(arr, e.f.Class.String())
+	arr = append(arr, e.f.Data.String())
+	arr = append(arr, e.f.Version.String())
+	arr = append(arr, e.f.OSABI.String())
+	arr = append(arr, strconv.Itoa(int(e.f.ABIVersion)))
+	arr = append(arr, e.f.ByteOrder.String())
+	arr = append(arr, e.f.Type.String())
+	arr = append(arr, e.f.Machine.String())
+	arr = append(arr, strconv.Itoa(int(e.f.Entry)))
 
 	return arr
 }
@@ -75,7 +76,7 @@ func ioReader(file string) (io.ReaderAt, error) {
 	return r, nil
 }
 
-func InitElf(file string) (*elf.File, error) {
+func InitElf(file string) (*Elf, error) {
 	r, err := ioReader(file)
 	if err != nil {
 		return nil, err
@@ -84,9 +85,11 @@ func InitElf(file string) (*elf.File, error) {
 	if err != nil {
 		return nil, err
 	}
-	return f, nil
+	e := new(Elf)
+	e.f = f
+	return e, nil
 }
 
-func Hllo(i string) {
+func (e *Elf) Hllo(i string) {
 	fmt.Println("hello")
 }
