@@ -5,17 +5,18 @@ import (
 
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
+	"github.com/rxOred/unnatural/parser"
 )
 
 // Analysis view
 type AnalysisView struct {
-	grid        *ui.Grid
-	Header      *widgets.Paragraph
-	Guagebar    *widgets.Gauge
-	SectionList *widgets.List
-	SegmentList *widgets.List
-	SymbolList  *widgets.List
-	OutData     *widgets.List
+	grid          *ui.Grid
+	Header        *widgets.Paragraph
+	Guagebar      *widgets.Gauge
+	SectionList   *widgets.List
+	ElfheaderList *widgets.List
+	SymbolList    *widgets.List
+	OutData       *widgets.List
 }
 
 // Error view
@@ -61,6 +62,14 @@ func CreateGuage(title string, percent int, borderfg ui.Color, titlefg ui.Color)
 	return g
 }
 
+func increasePercent(val int, g *widgets.Gauge) {
+	if g.Percent+val > 100 {
+		g.Percent += (100 - g.Percent)
+	} else {
+		g.Percent += val
+	}
+}
+
 // Analysis view
 func (av *AnalysisView) SetupAnalysisGrid() {
 	av.grid = ui.NewGrid()
@@ -69,7 +78,7 @@ func (av *AnalysisView) SetupAnalysisGrid() {
 	belowtop := ui.NewRow(1.0/8, av.Guagebar)
 	mid := ui.NewRow(2.0/7,
 		ui.NewCol(1.0/3, av.SectionList),
-		ui.NewCol(1.0/3, av.SegmentList),
+		ui.NewCol(1.0/3, av.ElfheaderList),
 		ui.NewCol(1.0/3, av.SymbolList),
 	)
 	bottom := ui.NewRow(4.0/8, av.OutData)
@@ -80,15 +89,37 @@ func (av *AnalysisView) SetupAnalysisGrid() {
 	av.grid.SetRect(0, 0, termwidth, termheight-1)
 }
 
-func InitAnalysisView(av *AnalysisView, target string) {
-	text := fmt.Sprintf("\t\tunnatural - Elf anomaly detector and disinfector\t\t\nTarget: %s", target)
+func InitAnalysisView(av *AnalysisView, ev *ErrorView, file string) {
+	text := fmt.Sprintf("\t\tunnatural - Elf anomaly detector and disinfector\t\t\nTarget: %s", file)
 	av.Header = CreateParagraph("", text, true, ui.ColorYellow, ui.ColorCyan)
 	av.Guagebar = CreateGuage("Analysing", 0, ui.ColorYellow, ui.ColorCyan)
 	av.SectionList = CreateList("elf header", true, ui.ColorYellow, ui.ColorCyan)
-	av.SegmentList = CreateList("Sections", true, ui.ColorYellow, ui.ColorCyan)
-	av.SymbolList = CreateList("Strings", true, ui.ColorYellow, ui.ColorCyan)
+	av.ElfheaderList = CreateList("Sections", true, ui.ColorYellow, ui.ColorCyan)
+	av.SymbolList = CreateList("Symbols", true, ui.ColorYellow, ui.ColorCyan)
 	av.OutData = CreateList("Analysis report", true, ui.ColorMagenta, ui.ColorRed)
 	av.SetupAnalysisGrid()
+
+	var p parser.Parser
+	p.Hllo("aaa")
+	f, err := p.InitElf(file)
+	if err != nil {
+		ShowErrorView(ev, err.Error())
+	}
+
+	header := p.GetElfHeader(f)
+	sections := p.GetSectionHeaders(f)
+	symbols, err := p.GetSymbols(f)
+	if err != nil {
+		ShowErrorView(ev, err.Error())
+	}
+
+	increasePercent(10, av.Guagebar)
+
+	av.SymbolList.Rows = symbols
+	av.ElfheaderList.Rows = header
+	av.SectionList.Rows = sections
+
+	increasePercent(10, av.Guagebar)
 }
 
 func ShowAnalysisView(av *AnalysisView) {
