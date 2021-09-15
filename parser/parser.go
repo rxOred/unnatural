@@ -2,8 +2,10 @@ package parser
 
 import (
 	"debug/elf"
+	"fmt"
 	"io"
 	"os"
+	"strconv"
 )
 
 var (
@@ -11,7 +13,15 @@ var (
 	elf_class   string
 )
 
-func getSectionHeaders(f *elf.File) []string {
+type Parser interface {
+	Hllo(i string)
+	InitElf(file string) (*elf.File, error)
+	GetElfHeader(f *elf.File) []string
+	GetSectionHeaders(f *elf.File) []string
+	GetSymbols(f *elf.File) ([]string, error)
+}
+
+func GetSectionHeaders(f *elf.File) []string {
 	var arr []string
 	sections := f.Sections
 	for i := 0; i < len(sections); i++ {
@@ -20,7 +30,7 @@ func getSectionHeaders(f *elf.File) []string {
 	return arr
 }
 
-func getSymbols(f *elf.File) ([]string, error) {
+func GetSymbols(f *elf.File) ([]string, error) {
 	sym, err := f.Symbols()
 	if err != nil {
 		return nil, err
@@ -42,6 +52,21 @@ func getSymbols(f *elf.File) ([]string, error) {
 	return arr, nil
 }
 
+func GetElfHeader(f *elf.File) []string {
+	var arr []string
+	arr = append(arr, f.Class.String())
+	arr = append(arr, f.Data.String())
+	arr = append(arr, f.Version.String())
+	arr = append(arr, f.OSABI.String())
+	arr = append(arr, strconv.Itoa(int(f.ABIVersion)))
+	arr = append(arr, f.ByteOrder.String())
+	arr = append(arr, f.Type.String())
+	arr = append(arr, f.Machine.String())
+	arr = append(arr, strconv.Itoa(int(f.Entry)))
+
+	return arr
+}
+
 func ioReader(file string) (io.ReaderAt, error) {
 	r, err := os.Open(file)
 	if err != nil {
@@ -50,13 +75,18 @@ func ioReader(file string) (io.ReaderAt, error) {
 	return r, nil
 }
 
-func InitElf(file string) error {
+func InitElf(file string) (*elf.File, error) {
 	r, err := ioReader(file)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	f, err := elf.NewFile(r)
 	if err != nil {
-
+		return nil, err
 	}
+	return f, nil
+}
+
+func Hllo(i string) {
+	fmt.Println("hello")
 }
