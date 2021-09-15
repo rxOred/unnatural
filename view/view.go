@@ -84,9 +84,9 @@ func InitAnalysisView(av *AnalysisView, target string) {
 	text := fmt.Sprintf("\t\tunnatural - Elf anomaly detector and disinfector\t\t\nTarget: %s", target)
 	av.Header = CreateParagraph("", text, true, ui.ColorYellow, ui.ColorCyan)
 	av.Guagebar = CreateGuage("Analysing", 0, ui.ColorYellow, ui.ColorCyan)
-	av.SectionList = CreateList("Sections", true, ui.ColorYellow, ui.ColorCyan)
-	av.SegmentList = CreateList("Segments", true, ui.ColorYellow, ui.ColorCyan)
-	av.SymbolList = CreateList("Symbols", true, ui.ColorYellow, ui.ColorCyan)
+	av.SectionList = CreateList("elf header", true, ui.ColorYellow, ui.ColorCyan)
+	av.SegmentList = CreateList("Sections", true, ui.ColorYellow, ui.ColorCyan)
+	av.SymbolList = CreateList("Strings", true, ui.ColorYellow, ui.ColorCyan)
 	av.OutData = CreateList("Analysis report", true, ui.ColorMagenta, ui.ColorRed)
 	av.SetupAnalysisGrid()
 }
