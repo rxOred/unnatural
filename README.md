@@ -5,5 +5,3 @@ It is capable of detecting malware infected binaries and disinfect those binarie
 
 Unnatural also comes with a runtime mode, which is capable of scanning a process for
 suspesicous content at runtime. it uses libbpfgo tracing library to achieve this.
-
-Unnatural has a terminal user interface to output Data it has found.
