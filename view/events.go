@@ -12,8 +12,8 @@ func (av *AnalysisView) Eventloop() {
 			switch e.ID {
 			case "<C-c>":
 				os.Exit(1)
-			default:
-				os.Exit(1)
+			case "<C-s>":
+				p.StartAnalysis()
 			}
 		}
 	}

@@ -2,14 +2,12 @@ package parser
 
 import (
 	"debug/elf"
-	"fmt"
 	"io"
 	"os"
 	"strconv"
 )
 
 type Parser interface {
-	Hllo(i string)
 	GetElfHeader() []string
 	GetSectionHeaders() []string
 	GetSymbols() []string
@@ -55,15 +53,16 @@ func (e *Elf) GetSymbols() []string {
 
 func (e *Elf) GetElfHeader() []string {
 	var arr []string
-	arr = append(arr, e.f.Class.String())
-	arr = append(arr, e.f.Data.String())
-	arr = append(arr, e.f.Version.String())
-	arr = append(arr, e.f.OSABI.String())
-	arr = append(arr, strconv.Itoa(int(e.f.ABIVersion)))
-	arr = append(arr, e.f.ByteOrder.String())
-	arr = append(arr, e.f.Type.String())
-	arr = append(arr, e.f.Machine.String())
-	arr = append(arr, strconv.Itoa(int(e.f.Entry)))
+
+	arr = append(arr, "class :"+e.f.Class.String())
+	arr = append(arr, "data :"+e.f.Data.String())
+	arr = append(arr, "version :"+e.f.Version.String())
+	arr = append(arr, "os abi :"+e.f.OSABI.String())
+	arr = append(arr, "abi version :"+strconv.Itoa(int(e.f.ABIVersion)))
+	arr = append(arr, "byteorder :"+e.f.ByteOrder.String())
+	arr = append(arr, "type :"+e.f.Type.String())
+	arr = append(arr, "machine :"+e.f.Machine.String())
+	arr = append(arr, "entry :"+strconv.Itoa(int(e.f.Entry)))
 
 	return arr
 }
@@ -88,8 +87,4 @@ func InitElf(file string) (*Elf, error) {
 	e := new(Elf)
 	e.f = f
 	return e, nil
-}
-
-func (e *Elf) Hllo(i string) {
-	fmt.Println("hello")
 }

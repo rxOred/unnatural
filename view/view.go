@@ -10,6 +10,7 @@ import (
 
 // Analysis view
 type AnalysisView struct {
+	e             *parser.Elf
 	grid          *ui.Grid
 	Header        *widgets.Paragraph
 	Guagebar      *widgets.Gauge
@@ -24,6 +25,10 @@ type ErrorView struct {
 	grid     *ui.Grid
 	ErrorBox *widgets.Paragraph
 }
+
+var (
+	p parser.Parser
+)
 
 // creates and return a new list
 func CreateList(title string, border bool, borderfg ui.Color, titlefg ui.Color) *widgets.List {
@@ -71,7 +76,7 @@ func increasePercent(val int, g *widgets.Gauge) {
 }
 
 // Analysis view
-func (av *AnalysisView) SetupAnalysisGrid() {
+func (av *AnalysisView) SetupAnalysisGrid() error {
 	av.grid = ui.NewGrid()
 
 	top := ui.NewRow(1.0/8, av.Header)
@@ -87,26 +92,32 @@ func (av *AnalysisView) SetupAnalysisGrid() {
 
 	termwidth, termheight := ui.TerminalDimensions()
 	av.grid.SetRect(0, 0, termwidth, termheight-1)
+	return nil
+}
+
+func (av *AnalysisView) StartAnalysis() error {
+	increasePercent(10, av.Guagebar)
+
+	CheckTextPaddingInfection(av.e)
 }
 
 func InitAnalysisView(av *AnalysisView, ev *ErrorView, file string) {
 	text := fmt.Sprintf("\t\tunnatural - Elf anomaly detector and disinfector\t\t\nTarget: %s", file)
 	av.Header = CreateParagraph("", text, true, ui.ColorYellow, ui.ColorCyan)
 	av.Guagebar = CreateGuage("Analysing", 0, ui.ColorYellow, ui.ColorCyan)
-	av.SectionList = CreateList("elf header", true, ui.ColorYellow, ui.ColorCyan)
-	av.ElfheaderList = CreateList("Sections", true, ui.ColorYellow, ui.ColorCyan)
+	av.ElfheaderList = CreateList("Elf header", true, ui.ColorYellow, ui.ColorCyan)
+	av.SectionList = CreateList("Sections", true, ui.ColorYellow, ui.ColorCyan)
 	av.SymbolList = CreateList("Symbols", true, ui.ColorYellow, ui.ColorCyan)
 	av.OutData = CreateList("Analysis report", true, ui.ColorMagenta, ui.ColorRed)
-	av.SetupAnalysisGrid()
-
-	e, err := parser.InitElf(file)
+	err := av.SetupAnalysisGrid()
 	if err != nil {
 		ShowErrorView(ev, err.Error())
 	}
+	if av.e, err = parser.InitElf(file); err != nil {
+		ShowErrorView(ev, err.Error())
+	}
 
-	var p parser.Parser
-	p = e
-	p.Hllo("aaa")
+	p = av.e
 	header := p.GetElfHeader()
 	sections := p.GetSectionHeaders()
 	symbols := p.GetSymbols()
