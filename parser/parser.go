@@ -14,12 +14,12 @@ type Parser interface {
 }
 
 type Elf struct {
-	f *elf.File
+	File *elf.File
 }
 
 func (e *Elf) GetSectionHeaders() []string {
 	var arr []string
-	sections := e.f.Sections
+	sections := e.File.Sections
 	for i := 0; i < len(sections); i++ {
 		arr = append(arr, sections[i].Name)
 	}
@@ -29,7 +29,7 @@ func (e *Elf) GetSectionHeaders() []string {
 func (e *Elf) GetSymbols() []string {
 	var arr []string
 
-	sym, err := e.f.Symbols()
+	sym, err := e.File.Symbols()
 	if err != nil {
 		arr = append(arr, "no symbols found")
 		return arr
@@ -38,8 +38,8 @@ func (e *Elf) GetSymbols() []string {
 		arr = append(arr, sym[i].Name)
 	}
 
-	if e.f.Type == elf.ET_DYN {
-		dynsym, err := e.f.DynamicSymbols()
+	if e.File.Type == elf.ET_DYN {
+		dynsym, err := e.File.DynamicSymbols()
 		if err != nil {
 			arr = append(arr, "no dynamic symbols found")
 			return arr
@@ -54,15 +54,15 @@ func (e *Elf) GetSymbols() []string {
 func (e *Elf) GetElfHeader() []string {
 	var arr []string
 
-	arr = append(arr, "class :"+e.f.Class.String())
-	arr = append(arr, "data :"+e.f.Data.String())
-	arr = append(arr, "version :"+e.f.Version.String())
-	arr = append(arr, "os abi :"+e.f.OSABI.String())
-	arr = append(arr, "abi version :"+strconv.Itoa(int(e.f.ABIVersion)))
-	arr = append(arr, "byteorder :"+e.f.ByteOrder.String())
-	arr = append(arr, "type :"+e.f.Type.String())
-	arr = append(arr, "machine :"+e.f.Machine.String())
-	arr = append(arr, "entry :"+strconv.Itoa(int(e.f.Entry)))
+	arr = append(arr, "class :"+e.File.Class.String())
+	arr = append(arr, "data :"+e.File.Data.String())
+	arr = append(arr, "version :"+e.File.Version.String())
+	arr = append(arr, "os abi :"+e.File.OSABI.String())
+	arr = append(arr, "abi version :"+strconv.Itoa(int(e.File.ABIVersion)))
+	arr = append(arr, "byteorder :"+e.File.ByteOrder.String())
+	arr = append(arr, "type :"+e.File.Type.String())
+	arr = append(arr, "machine :"+e.File.Machine.String())
+	arr = append(arr, "entry :"+strconv.Itoa(int(e.File.Entry)))
 
 	return arr
 }
@@ -85,6 +85,6 @@ func InitElf(file string) (*Elf, error) {
 		return nil, err
 	}
 	e := new(Elf)
-	e.f = f
+	e.File = f
 	return e, nil
 }
