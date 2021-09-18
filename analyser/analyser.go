@@ -27,14 +27,13 @@ func CheckTextPaddingInfection(f *elf.File) *Report {
 			// text segment found
 			if f.Entry > f.Progs[i].Vaddr {
 				// init the structure, assign values, then return
-				r := &Report{
-					R_class: ELF_TEXT_PADDING,
-					R_info: []string{
-						"[DECTED] classification : text padding infection",
-						"reasons for above conclution :",
-						"Entry point :" + strconv.Itoa(int(f.Entry)),
-						"Text Segment address :" + strconv.Itoa(int(f.Progs[i].Vaddr)),
-					},
+				r := new(Report)
+				r.R_class = ELF_TEXT_PADDING
+				r.R_info = []string{
+					"[DECTED] classification : text padding infection",
+					"reasons for above conclution :",
+					"Entry point :" + strconv.Itoa(int(f.Entry)),
+					"Text Segment address :" + strconv.Itoa(int(f.Progs[i].Vaddr)),
 				}
 				return r
 			}
