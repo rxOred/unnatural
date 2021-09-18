@@ -5,19 +5,20 @@ import (
 
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
+	"github.com/rxOred/unnatural/analyser"
 	parser "github.com/rxOred/unnatural/parser"
 )
 
 // Analysis view
 type AnalysisView struct {
-	e             *parser.Elf
+	elf           *parser.Elf
 	grid          *ui.Grid
 	Header        *widgets.Paragraph
 	Guagebar      *widgets.Gauge
 	SectionList   *widgets.List
 	ElfheaderList *widgets.List
 	SymbolList    *widgets.List
-	OutData       *widgets.List
+	Report        *widgets.List
 }
 
 // Error view
@@ -86,7 +87,7 @@ func (av *AnalysisView) SetupAnalysisGrid() error {
 		ui.NewCol(1.0/3, av.ElfheaderList),
 		ui.NewCol(1.0/3, av.SymbolList),
 	)
-	bottom := ui.NewRow(4.0/8, av.OutData)
+	bottom := ui.NewRow(4.0/8, av.Report)
 
 	av.grid.Set(top, belowtop, mid, bottom)
 
@@ -98,26 +99,36 @@ func (av *AnalysisView) SetupAnalysisGrid() error {
 func (av *AnalysisView) StartAnalysis() error {
 	increasePercent(10, av.Guagebar)
 
-	CheckTextPaddingInfection(av.e)
+	// text padding infection
+	r := analyser.CheckTextPaddingInfection(av.elf.File)
+	if r.R_class == analyser.ELF_TEXT_PADDING {
+		for i := 0; i < len(r.R_info); i++ {
+			av.Report.Rows = append(av.Report.Rows, r.R_info[i])
+		}
+	}
+
+	increasePercent(10, av.Guagebar)
+
+	return nil
 }
 
 func InitAnalysisView(av *AnalysisView, ev *ErrorView, file string) {
 	text := fmt.Sprintf("\t\tunnatural - Elf anomaly detector and disinfector\t\t\nTarget: %s", file)
 	av.Header = CreateParagraph("", text, true, ui.ColorYellow, ui.ColorCyan)
-	av.Guagebar = CreateGuage("Analysing", 0, ui.ColorYellow, ui.ColorCyan)
+	av.Guagebar = CreateGuage("", 0, ui.ColorYellow, ui.ColorCyan)
 	av.ElfheaderList = CreateList("Elf header", true, ui.ColorYellow, ui.ColorCyan)
 	av.SectionList = CreateList("Sections", true, ui.ColorYellow, ui.ColorCyan)
 	av.SymbolList = CreateList("Symbols", true, ui.ColorYellow, ui.ColorCyan)
-	av.OutData = CreateList("Analysis report", true, ui.ColorMagenta, ui.ColorRed)
+	av.Report = CreateList("Analysis report", true, ui.ColorMagenta, ui.ColorRed)
 	err := av.SetupAnalysisGrid()
 	if err != nil {
 		ShowErrorView(ev, err.Error())
 	}
-	if av.e, err = parser.InitElf(file); err != nil {
+	if av.elf, err = parser.InitElf(file); err != nil {
 		ShowErrorView(ev, err.Error())
 	}
 
-	p = av.e
+	p = av.elf
 	header := p.GetElfHeader()
 	sections := p.GetSectionHeaders()
 	symbols := p.GetSymbols()
@@ -131,6 +142,7 @@ func InitAnalysisView(av *AnalysisView, ev *ErrorView, file string) {
 	increasePercent(10, av.Guagebar)
 }
 
+// clear screen, render the UI, start eventloop
 func ShowAnalysisView(av *AnalysisView) {
 	ui.Clear()
 	ui.Render(av.grid)
