@@ -13,7 +13,8 @@ func (av *AnalysisView) Eventloop() {
 			case "<C-c>":
 				os.Exit(1)
 			case "<C-s>":
-				p.StartAnalysis()
+				av.Guagebar.Title = "Analysing"
+				// start analysis
 			}
 		}
 	}
