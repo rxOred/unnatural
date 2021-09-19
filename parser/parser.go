@@ -13,13 +13,14 @@ type Parser interface {
 	GetSymbols() []string
 }
 
+// this needs to be exported
 type Elf struct {
-	File *elf.File
+	E_file *elf.File
 }
 
 func (e *Elf) GetSectionHeaders() []string {
 	var arr []string
-	sections := e.File.Sections
+	sections := e.E_file.Sections
 	for i := 0; i < len(sections); i++ {
 		arr = append(arr, sections[i].Name)
 	}
@@ -29,7 +30,7 @@ func (e *Elf) GetSectionHeaders() []string {
 func (e *Elf) GetSymbols() []string {
 	var arr []string
 
-	sym, err := e.File.Symbols()
+	sym, err := e.E_file.Symbols()
 	if err != nil {
 		arr = append(arr, "no symbols found")
 		return arr
@@ -38,8 +39,8 @@ func (e *Elf) GetSymbols() []string {
 		arr = append(arr, sym[i].Name)
 	}
 
-	if e.File.Type == elf.ET_DYN {
-		dynsym, err := e.File.DynamicSymbols()
+	if e.E_file.Type == elf.ET_DYN {
+		dynsym, err := e.E_file.DynamicSymbols()
 		if err != nil {
 			arr = append(arr, "no dynamic symbols found")
 			return arr
@@ -54,15 +55,15 @@ func (e *Elf) GetSymbols() []string {
 func (e *Elf) GetElfHeader() []string {
 	var arr []string
 
-	arr = append(arr, "class :"+e.File.Class.String())
-	arr = append(arr, "data :"+e.File.Data.String())
-	arr = append(arr, "version :"+e.File.Version.String())
-	arr = append(arr, "os abi :"+e.File.OSABI.String())
-	arr = append(arr, "abi version :"+strconv.Itoa(int(e.File.ABIVersion)))
-	arr = append(arr, "byteorder :"+e.File.ByteOrder.String())
-	arr = append(arr, "type :"+e.File.Type.String())
-	arr = append(arr, "machine :"+e.File.Machine.String())
-	arr = append(arr, "entry :"+strconv.Itoa(int(e.File.Entry)))
+	arr = append(arr, "class :"+e.E_file.Class.String())
+	arr = append(arr, "data :"+e.E_file.Data.String())
+	arr = append(arr, "version :"+e.E_file.Version.String())
+	arr = append(arr, "os abi :"+e.E_file.OSABI.String())
+	arr = append(arr, "abi version :"+strconv.Itoa(int(e.E_file.ABIVersion)))
+	arr = append(arr, "byteorder :"+e.E_file.ByteOrder.String())
+	arr = append(arr, "type :"+e.E_file.Type.String())
+	arr = append(arr, "machine :"+e.E_file.Machine.String())
+	arr = append(arr, "entry :"+strconv.Itoa(int(e.E_file.Entry)))
 
 	return arr
 }
@@ -85,6 +86,6 @@ func InitElf(file string) (*Elf, error) {
 		return nil, err
 	}
 	e := new(Elf)
-	e.File = f
+	e.E_file = f
 	return e, nil
 }
