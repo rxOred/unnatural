@@ -11,20 +11,20 @@ import (
 
 // Analysis view
 type AnalysisView struct {
-	elf           *parser.Elf
-	grid          *ui.Grid
-	Header        *widgets.Paragraph
-	Guagebar      *widgets.Gauge
-	SectionList   *widgets.List
-	ElfheaderList *widgets.List
-	SymbolList    *widgets.List
-	Report        *widgets.List
+	a_elf            *parser.Elf
+	a_grid           *ui.Grid
+	a_header         *widgets.Paragraph
+	a_guagebar       *widgets.Gauge
+	a_section_list   *widgets.List
+	a_elfheader_list *widgets.List
+	a_symbolList     *widgets.List
+	a_report         *widgets.List
 }
 
 // Error view
 type ErrorView struct {
-	grid     *ui.Grid
-	ErrorBox *widgets.Paragraph
+	e_grid     *ui.Grid
+	e_errorbox *widgets.Paragraph
 }
 
 var (
@@ -78,95 +78,96 @@ func increasePercent(val int, g *widgets.Gauge) {
 
 // Analysis view
 func (av *AnalysisView) SetupAnalysisGrid() error {
-	av.grid = ui.NewGrid()
+	av.a_grid = ui.NewGrid()
 
-	top := ui.NewRow(1.0/8, av.Header)
-	belowtop := ui.NewRow(1.0/8, av.Guagebar)
+	top := ui.NewRow(1.0/8, av.a_header)
+	belowtop := ui.NewRow(1.0/8, av.a_guagebar)
 	mid := ui.NewRow(2.0/7,
-		ui.NewCol(1.0/3, av.SectionList),
-		ui.NewCol(1.0/3, av.ElfheaderList),
-		ui.NewCol(1.0/3, av.SymbolList),
+		ui.NewCol(1.0/3, av.a_section_list),
+		ui.NewCol(1.0/3, av.a_elfheader_list),
+		ui.NewCol(1.0/3, av.a_symbolList),
 	)
-	bottom := ui.NewRow(4.0/8, av.Report)
+	bottom := ui.NewRow(4.0/8, av.a_report)
 
-	av.grid.Set(top, belowtop, mid, bottom)
+	av.a_grid.Set(top, belowtop, mid, bottom)
 
 	termwidth, termheight := ui.TerminalDimensions()
-	av.grid.SetRect(0, 0, termwidth, termheight-1)
+	av.a_grid.SetRect(0, 0, termwidth, termheight-1)
 	return nil
 }
 
 func (av *AnalysisView) StartAnalysis() error {
-	increasePercent(10, av.Guagebar)
+	increasePercent(3, av.a_guagebar)
+	av.a_guagebar.Title = "Analysing"
+	ui.Render(av.a_grid)
 
 	// text padding infection
-	r := analyser.CheckTextPaddingInfection(av.elf.File)
+	r := analyser.CheckTextPaddingInfection(av.a_elf.E_file)
 	if r.R_class == analyser.ELF_TEXT_PADDING {
 		for i := 0; i < len(r.R_info); i++ {
-			av.Report.Rows = append(av.Report.Rows, r.R_info[i])
+			av.a_report.Rows = append(av.a_report.Rows, r.R_info[i])
 		}
 	}
-
-	increasePercent(10, av.Guagebar)
-
+	increasePercent(3, av.a_guagebar)
+	ui.Render(av.a_grid)
 	return nil
 }
 
 func InitAnalysisView(av *AnalysisView, ev *ErrorView, file string) {
 	text := fmt.Sprintf("\t\tunnatural - Elf anomaly detector and disinfector\t\t\nTarget: %s", file)
-	av.Header = CreateParagraph("", text, true, ui.ColorYellow, ui.ColorCyan)
-	av.Guagebar = CreateGuage("", 0, ui.ColorYellow, ui.ColorCyan)
-	av.ElfheaderList = CreateList("Elf header", true, ui.ColorYellow, ui.ColorCyan)
-	av.SectionList = CreateList("Sections", true, ui.ColorYellow, ui.ColorCyan)
-	av.SymbolList = CreateList("Symbols", true, ui.ColorYellow, ui.ColorCyan)
-	av.Report = CreateList("Analysis report", true, ui.ColorMagenta, ui.ColorRed)
+	av.a_header = CreateParagraph("", text, true, ui.ColorYellow, ui.ColorCyan)
+	av.a_guagebar = CreateGuage("", 0, ui.ColorYellow, ui.ColorCyan)
+	av.a_elfheader_list = CreateList("Elf header", true, ui.ColorYellow, ui.ColorCyan)
+	av.a_section_list = CreateList("Sections", true, ui.ColorYellow, ui.ColorCyan)
+	av.a_symbolList = CreateList("Symbols", true, ui.ColorYellow, ui.ColorCyan)
+	av.a_report = CreateList("Analysis report", true, ui.ColorMagenta, ui.ColorRed)
 	err := av.SetupAnalysisGrid()
 	if err != nil {
 		ShowErrorView(ev, err.Error())
 	}
-	if av.elf, err = parser.InitElf(file); err != nil {
+	if av.a_elf, err = parser.InitElf(file); err != nil {
 		ShowErrorView(ev, err.Error())
 	}
 
-	p = av.elf
+	p = av.a_elf
 	header := p.GetElfHeader()
 	sections := p.GetSectionHeaders()
 	symbols := p.GetSymbols()
 
-	increasePercent(10, av.Guagebar)
+	increasePercent(10, av.a_guagebar)
 
-	av.SymbolList.Rows = symbols
-	av.ElfheaderList.Rows = header
-	av.SectionList.Rows = sections
+	av.a_symbolList.Rows = symbols
+	av.a_elfheader_list.Rows = header
+	av.a_section_list.Rows = sections
 
-	increasePercent(10, av.Guagebar)
+	increasePercent(10, av.a_guagebar)
 }
 
 // clear screen, render the UI, start eventloop
 func ShowAnalysisView(av *AnalysisView) {
 	ui.Clear()
-	ui.Render(av.grid)
+	ui.Render(av.a_grid)
 	av.Eventloop()
 }
 
 // error view
 func (ev *ErrorView) SetupErrorGrid() {
-	ev.grid = ui.NewGrid()
-	body := ui.NewRow(1.0, ev.ErrorBox)
+	ev.e_grid = ui.NewGrid()
+	body := ui.NewRow(1.0, ev.e_errorbox)
 
-	ev.grid.Set(body)
+	ev.e_grid.Set(body)
 	termwidth, termheight := ui.TerminalDimensions()
-	ev.grid.SetRect(0, 0, termwidth, termheight-1)
+	ev.e_grid.SetRect(0, 0, termwidth, termheight-1)
 }
 
 func InitErrorView(ev *ErrorView) {
-	ev.ErrorBox = CreateParagraph("Error", "", true, ui.ColorYellow, ui.ColorWhite)
+	ev.e_errorbox = CreateParagraph("Error", "", true, ui.ColorYellow, ui.ColorWhite)
 	ev.SetupErrorGrid()
 }
 
 func ShowErrorView(ev *ErrorView, errmsg string) {
-	ev.ErrorBox.Text = errmsg
+	ev.e_errorbox.Text = errmsg
 	ui.Clear()
-	ui.Render(ev.grid)
+	ui.Render(ev.e_grid)
 	ev.Eventloop()
 }
