@@ -48,5 +48,5 @@ func main() {
 	view.InitAnalysisWidgets(&av, &ev, *binpathFlag)
 
 	// Show Analysis view to the user
-	view.ShowAnalysisView(&av)
+	view.ShowAnalysisView(&av, &ev)
 }
