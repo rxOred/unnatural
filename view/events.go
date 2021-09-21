@@ -36,7 +36,7 @@ func (av *AnalysisView) Eventloop(ev *ErrorView) {
 				if hightlight == -1 {
 					highight == 4
 				}
-				hightlight(1)
+				hightlight(hightlight)
 
 			case "<Down>", "<Right>":
 				hightlight++
@@ -46,7 +46,7 @@ func (av *AnalysisView) Eventloop(ev *ErrorView) {
 				HighLight(hightlight)
 
 			default:
-				av.a_report.Rows = append(av.a_report.Rows, "key:"+e.ID)
+				av.a_analysis_report.Rows = append(av.a_analysis_report.Rows, "key:"+e.ID)
 				ui.Render(av.a_grid)
 			}
 		}

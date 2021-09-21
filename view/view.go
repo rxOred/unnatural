@@ -11,14 +11,17 @@ import (
 
 // Analysis view
 type AnalysisView struct {
-	a_elf            *parser.Elf
-	a_grid           *ui.Grid
-	a_header         *widgets.Paragraph
-	a_guagebar       *widgets.Gauge
-	a_section_list   *widgets.List
-	a_elfheader_list *widgets.List
-	a_symbolList     *widgets.List
-	a_report         *widgets.List
+	a_elf             *parser.Elf
+	a_grid            *ui.Grid
+	a_header          *widgets.Paragraph
+	a_guage           *widgets.Gauge
+	a_section_list    *widgets.List
+	a_elf_header_list *widgets.List
+	a_symbol_list     *widgets.List
+	a_analysis_report *widgets.List
+
+	// currently selected list
+	a_selected_list *widgets.List
 }
 
 // Error view
@@ -26,6 +29,13 @@ type ErrorView struct {
 	e_grid     *ui.Grid
 	e_errorbox *widgets.Paragraph
 }
+
+const (
+	ANA_ELFHEADER_HI    int8 = 0
+	ANA_SECTIONS_HI     int8 = 1
+	ANA_SYMBOLS_HI      int8 = 2
+	ANA_ANALYSIS_REPORT int8 = 3
+)
 
 var (
 	p parser.Parser
@@ -77,14 +87,34 @@ func increasePercent(val int, g *widgets.Gauge) {
 }
 
 // Analysis view
+func (av *AnalysisView) HighLight(highlight int8) {
+	switch highlight {
+	case ANA_ELFHEADER_HI:
+		av.a_elf_header_list.BorderStyle.Fg = ui.ColorRed
+		av.a_elf_header_list = av.a_elf_header_list
+
+	case ANA_SECTIONS_HI:
+		av.a_section_list.BorderStyle.Fg = ui.ColorRed
+		av.a_section_list = av.a_section_list
+
+	case ANA_SYMBOLS_HI:
+		av.a_symbol_list.BorderStyle.Fg = ui.ColorRed
+		av.a_selected_list = av.a_symbol_list
+
+	case ANA_ANALYSIS_REPORT:
+		av.a_analysis_report.BorderStyle.Fg = ui.ColorRed
+		av.a_selected_list = av.a_analysis_report
+	}
+}
+
 func (av *AnalysisView) SetupAnalysisGrid() error {
 	av.a_grid = ui.NewGrid()
 
 	top := ui.NewRow(1.0/8, av.a_header)
 	belowtop := ui.NewRow(1.0/8, av.a_guagebar)
 	mid := ui.NewRow(2.0/7,
-		ui.NewCol(1.0/3, av.a_section_list),
 		ui.NewCol(1.0/3, av.a_elfheader_list),
+		ui.NewCol(1.0/3, av.a_section_list),
 		ui.NewCol(1.0/3, av.a_symbolList),
 	)
 	bottom := ui.NewRow(4.0/8, av.a_report)
@@ -105,22 +135,26 @@ func (av *AnalysisView) StartAnalysis() error {
 	r := analyser.CheckTextPaddingInfection(av.a_elf.E_file)
 	if r.R_class == analyser.ELF_TEXT_PADDING {
 		for i := 0; i < len(r.R_info); i++ {
-			av.a_report.Rows = append(av.a_report.Rows, r.R_info[i])
+			av.a_analysis_report.Rows = append(av.a_analysis_report.Rows, r.R_info[i])
 		}
 	}
-	increasePercent(3, av.a_guagebar)
+	increasePercent(3, av.a_guage)
 	ui.Render(av.a_grid)
 	return nil
 }
 
-func InitAnalysisView(av *AnalysisView, ev *ErrorView, file string) {
+func InitAnalysisWidgets(av *AnalysisView, ev *ErrorView, file string) {
 	text := fmt.Sprintf("\t\tunnatural - Elf anomaly detector and disinfector\t\t\nTarget: %s", file)
 	av.a_header = CreateParagraph("", text, true, ui.ColorYellow, ui.ColorCyan)
-	av.a_guagebar = CreateGuage("", 0, ui.ColorYellow, ui.ColorCyan)
-	av.a_elfheader_list = CreateList("Elf header", true, ui.ColorYellow, ui.ColorCyan)
+	av.a_guage = CreateGuage("", 0, ui.ColorYellow, ui.ColorCyan)
+
+	// elf header is the initial highlight
+	av.a_elf_header_list = CreateList("Elf header", true, ui.ColorRed, ui.ColorCyan)
+	av.a_selected_list = av.a_elf_header_list
+
 	av.a_section_list = CreateList("Sections", true, ui.ColorYellow, ui.ColorCyan)
-	av.a_symbolList = CreateList("Symbols", true, ui.ColorYellow, ui.ColorCyan)
-	av.a_report = CreateList("Analysis report", true, ui.ColorMagenta, ui.ColorRed)
+	av.a_symbol_list = CreateList("Symbols", true, ui.ColorYellow, ui.ColorCyan)
+	av.a_analysis_report = CreateList("Analysis report", true, ui.ColorMagenta, ui.ColorRed)
 	err := av.SetupAnalysisGrid()
 	if err != nil {
 		ShowErrorView(ev, err.Error())
@@ -134,13 +168,13 @@ func InitAnalysisView(av *AnalysisView, ev *ErrorView, file string) {
 	sections := p.GetSectionHeaders()
 	symbols := p.GetSymbols()
 
-	increasePercent(10, av.a_guagebar)
+	increasePercent(10, av.a_guage)
 
-	av.a_symbolList.Rows = symbols
-	av.a_elfheader_list.Rows = header
+	av.a_symbol_list.Rows = symbols
+	av.a_elf_header_list.Rows = header
 	av.a_section_list.Rows = sections
 
-	increasePercent(10, av.a_guagebar)
+	increasePercent(10, av.a_guage)
 }
 
 // clear screen, render the UI, start eventloop
