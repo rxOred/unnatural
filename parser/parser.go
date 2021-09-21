@@ -63,7 +63,7 @@ func (e *Elf) GetElfHeader() []string {
 	arr = append(arr, "byteorder :"+e.E_file.ByteOrder.String())
 	arr = append(arr, "type :"+e.E_file.Type.String())
 	arr = append(arr, "machine :"+e.E_file.Machine.String())
-	arr = append(arr, "entry :"+strconv.Itoa(int(e.E_file.Entry)))
+	arr = append(arr, "entry : 0x"+strconv.FormatUint(e.E_file.Entry, 16))
 
 	return arr
 }
