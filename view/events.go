@@ -12,13 +12,7 @@ func (av *AnalysisView) Eventloop(ev *ErrorView) {
 	sig_term := make(chan os.Signal, 2)
 	signal.Notify(sig_term, os.Interrupt, syscall.SIGTERM)
 
-	choices := []string{
-		"Sections",
-		"Elf Header",
-		"Symbols",
-		"Analysis Report",
-	}
-	var hightlight int8 = 0
+	var highlight int8 = 0
 
 	for e := range ui.PollEvents() {
 		if e.Type == ui.KeyboardEvent {
@@ -31,19 +25,19 @@ func (av *AnalysisView) Eventloop(ev *ErrorView) {
 					ShowErrorView(ev, err.Error())
 				}
 
-			case "Up", "<Left>":
-				hightlight--
-				if hightlight == -1 {
-					highight == 4
+			case "<Left>":
+				highlight--
+				if highlight == -1 {
+					highlight = 4
 				}
-				hightlight(hightlight)
+				av.HighLight(highlight)
 
-			case "<Down>", "<Right>":
-				hightlight++
-				if hightlight == 5 {
-					hightlight = 0
+			case "<Right>":
+				highlight++
+				if highlight == 5 {
+					highlight = 0
 				}
-				HighLight(hightlight)
+				av.HighLight(highlight)
 
 			default:
 				av.a_analysis_report.Rows = append(av.a_analysis_report.Rows, "key:"+e.ID)

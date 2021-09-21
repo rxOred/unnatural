@@ -91,33 +91,51 @@ func (av *AnalysisView) HighLight(highlight int8) {
 	switch highlight {
 	case ANA_ELFHEADER_HI:
 		av.a_elf_header_list.BorderStyle.Fg = ui.ColorRed
-		av.a_elf_header_list = av.a_elf_header_list
+		av.a_section_list.BorderStyle.Fg = ui.ColorYellow
+		av.a_symbol_list.BorderStyle.Fg = ui.ColorYellow
+		av.a_analysis_report.BorderStyle.Fg = ui.ColorYellow
+
+		av.a_selected_list = av.a_elf_header_list
 
 	case ANA_SECTIONS_HI:
 		av.a_section_list.BorderStyle.Fg = ui.ColorRed
-		av.a_section_list = av.a_section_list
+		av.a_elf_header_list.BorderStyle.Fg = ui.ColorYellow
+		av.a_symbol_list.BorderStyle.Fg = ui.ColorYellow
+		av.a_analysis_report.BorderStyle.Fg = ui.ColorYellow
+
+		av.a_selected_list = av.a_section_list
 
 	case ANA_SYMBOLS_HI:
 		av.a_symbol_list.BorderStyle.Fg = ui.ColorRed
+		av.a_elf_header_list.BorderStyle.Fg = ui.ColorYellow
+		av.a_section_list.BorderStyle.Fg = ui.ColorYellow
+		av.a_analysis_report.BorderStyle.Fg = ui.ColorYellow
+
 		av.a_selected_list = av.a_symbol_list
 
 	case ANA_ANALYSIS_REPORT:
 		av.a_analysis_report.BorderStyle.Fg = ui.ColorRed
+		av.a_elf_header_list.BorderStyle.Fg = ui.ColorYellow
+		av.a_section_list.BorderStyle.Fg = ui.ColorYellow
+		av.a_symbol_list.BorderStyle.Fg = ui.ColorYellow
+
 		av.a_selected_list = av.a_analysis_report
 	}
+
+	ui.Render(av.a_grid)
 }
 
 func (av *AnalysisView) SetupAnalysisGrid() error {
 	av.a_grid = ui.NewGrid()
 
 	top := ui.NewRow(1.0/8, av.a_header)
-	belowtop := ui.NewRow(1.0/8, av.a_guagebar)
+	belowtop := ui.NewRow(1.0/8, av.a_guage)
 	mid := ui.NewRow(2.0/7,
-		ui.NewCol(1.0/3, av.a_elfheader_list),
+		ui.NewCol(1.0/3, av.a_elf_header_list),
 		ui.NewCol(1.0/3, av.a_section_list),
-		ui.NewCol(1.0/3, av.a_symbolList),
+		ui.NewCol(1.0/3, av.a_symbol_list),
 	)
-	bottom := ui.NewRow(4.0/8, av.a_report)
+	bottom := ui.NewRow(4.0/8, av.a_analysis_report)
 
 	av.a_grid.Set(top, belowtop, mid, bottom)
 
@@ -127,8 +145,8 @@ func (av *AnalysisView) SetupAnalysisGrid() error {
 }
 
 func (av *AnalysisView) StartAnalysis() error {
-	increasePercent(3, av.a_guagebar)
-	av.a_guagebar.Title = "Analysing"
+	increasePercent(3, av.a_guage)
+	av.a_guage.Title = "Analysing"
 	ui.Render(av.a_grid)
 
 	// text padding infection
@@ -178,10 +196,10 @@ func InitAnalysisWidgets(av *AnalysisView, ev *ErrorView, file string) {
 }
 
 // clear screen, render the UI, start eventloop
-func ShowAnalysisView(av *AnalysisView) {
+func ShowAnalysisView(av *AnalysisView, ev *ErrorView) {
 	ui.Clear()
 	ui.Render(av.a_grid)
-	av.Eventloop()
+	av.Eventloop(ev)
 }
 
 // error view
