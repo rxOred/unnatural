@@ -6,9 +6,9 @@ import (
 )
 
 // infection class
-type Class int
+type Class int8
 
-var (
+const (
 	ELF_NONE            Class = 0
 	ELF_TEXT_PADDING    Class = 1
 	ELF_REVERSE_PADDING Class = 2
