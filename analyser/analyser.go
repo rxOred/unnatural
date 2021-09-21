@@ -33,8 +33,9 @@ func CheckTextPaddingInfection(f *elf.File) Report {
 					R_info: []string{
 						"[DECTED] classification : text padding infection",
 						"reasons for above conclusion :",
-						"Entry point :" + strconv.Itoa(int(f.Entry)),
-						"Text Segment address :" + strconv.Itoa(int(f.Progs[i].Vaddr)),
+						"Entry point : 0x" + strconv.FormatUint(uint64(f.Entry), 16),
+						"Text Segment address : 0x" + strconv.FormatUint(uint64(f.Progs[i].Vaddr), 16),
+						"",
 					},
 				}
 				return r
