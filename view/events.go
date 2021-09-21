@@ -28,19 +28,23 @@ func (av *AnalysisView) Eventloop(ev *ErrorView) {
 			case "<Left>":
 				highlight--
 				if highlight == -1 {
-					highlight = 4
+					highlight = 3
 				}
 				av.HighLight(highlight)
 
 			case "<Right>":
 				highlight++
-				if highlight == 5 {
+				if highlight == 4 {
 					highlight = 0
 				}
 				av.HighLight(highlight)
 
-			default:
-				av.a_analysis_report.Rows = append(av.a_analysis_report.Rows, "key:"+e.ID)
+			case "<Down>":
+				av.a_selected_list.ScrollDown()
+				ui.Render(av.a_grid)
+
+			case "<Up>":
+				av.a_selected_list.ScrollUp()
 				ui.Render(av.a_grid)
 			}
 		}
