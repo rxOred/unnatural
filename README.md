@@ -7,3 +7,6 @@ goals:
 - detect and disinfect data segment infections
 - detect and disinfect PT_NOTE infections
 - Profiling view
+
+ToDo:
+- Detect Reverse text padding infections
