@@ -22,8 +22,10 @@ type Report struct {
 	R_info []string
 }
 
-func CheckTextPaddingInfection(f *elf.File) Report {
+func CheckSegmentInfections(f *elf.File) Report {
 	var r Report
+
+	// text padding infection
 	for i := 0; i < len(f.Progs); i++ {
 		if f.Progs[i].Type == elf.PT_LOAD && f.Progs[i].Flags == elf.PF_R|elf.PF_X {
 			if f.Entry > f.Progs[i].Vaddr {
@@ -41,6 +43,8 @@ func CheckTextPaddingInfection(f *elf.File) Report {
 				return r
 			}
 		}
+
+		// data segment padding infection
 		if f.Progs[i].Type == elf.PT_LOAD && f.Progs[i].Flags == elf.PF_W|elf.PF_R {
 			if f.Entry > f.Progs[i].Vaddr {
 				r = Report{
