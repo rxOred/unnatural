@@ -163,13 +163,17 @@ func (av *AnalysisView) StartAnalysis() error {
 }
 
 func (av *AnalysisView) StartDisInfection() error {
-	if err := disinfect.DisinfectTextPaddingInfection(av.a_elf.E_file); err != nil {
-		return err
+	if r := disinfect.DisinfectTextPaddingInfection(av.a_elf.E_file); r != nil {
+		for i := 0; i < len(r); i++ {
+			av.a_analysis_report.Rows = append(av.a_analysis_report.Rows, r[i])
+		}
 	}
 	av.a_analysis_report.Rows = append(av.a_analysis_report.Rows, "")
 
-	if err := disinfect.DisinfectDataSegmentInfection(av.a_elf.E_file); err != nil {
-		return err
+	if r := disinfect.DisinfectDataSegmentInfection(av.a_elf.E_file); r != nil {
+		for i := 0; i < len(r); i++ {
+			av.a_analysis_report.Rows = append(av.a_analysis_report.Rows, r[i])
+		}
 	}
 	av.a_analysis_report.Rows = append(av.a_analysis_report.Rows, "")
 	return nil
