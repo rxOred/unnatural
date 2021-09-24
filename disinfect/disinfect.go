@@ -13,7 +13,7 @@ func DisinfectTextPaddingInfection(f *elf.File) []string {
 				f.Entry = sec.Addr
 				r := []string{
 					"[SUCESSFUL] Disinfected text padding infection",
-					"Fixed entry point :", strconv.FormatUint(uint64(f.Entry), 16),
+					"Fixed entry point : 0x" + strconv.FormatUint(uint64(f.Entry), 16),
 				}
 				return r
 			}
