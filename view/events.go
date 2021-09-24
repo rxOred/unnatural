@@ -25,6 +25,12 @@ func (av *AnalysisView) Eventloop(ev *ErrorView) {
 					ShowErrorView(ev, err.Error())
 				}
 
+			case "<C-d>":
+				// dis infect
+				if err := av.StartDisInfection(); err != nil {
+					ShowErrorView(ev, err.Error())
+				}
+
 			case "<Left>":
 				highlight--
 				if highlight == -1 {
