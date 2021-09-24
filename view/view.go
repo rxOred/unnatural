@@ -176,6 +176,7 @@ func (av *AnalysisView) StartDisInfection() error {
 		}
 	}
 	av.a_analysis_report.Rows = append(av.a_analysis_report.Rows, "")
+	ui.Render(av.a_grid)
 	return nil
 }
 
