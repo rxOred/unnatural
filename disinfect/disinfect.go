@@ -25,6 +25,7 @@ func DisinfectDataSegmentInfection(f *elf.File) error {
 	return nil
 }
 
+/*
 func DisinfectReverseTextInfection(f *elf.File) error {
 
 }
@@ -32,3 +33,4 @@ func DisinfectReverseTextInfection(f *elf.File) error {
 func DisinfectFunctionPaddingInfection(f *elf.File) error {
 
 }
+*/
