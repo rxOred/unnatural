@@ -34,7 +34,7 @@ func CheckSegmentInfections(f *elf.File) Report {
 					R_class: ELF_TEXT_PADDING,
 					R_info: []string{
 						"[DECTED] classification : text padding infection",
-						"reasons for above conclusion :",
+						"Reasons for above conclusion :",
 						"Entry point : 0x" + strconv.FormatUint(uint64(f.Entry), 16),
 						"Text Segment address : 0x" + strconv.FormatUint(uint64(f.Progs[i].Vaddr), 16),
 						"",
