@@ -6,6 +6,7 @@ import (
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
 	"github.com/rxOred/unnatural/analyser"
+	disinfect "github.com/rxOred/unnatural/disinfect"
 	parser "github.com/rxOred/unnatural/parser"
 )
 
@@ -150,13 +151,31 @@ func (av *AnalysisView) StartAnalysis() error {
 	ui.Render(av.a_grid)
 
 	// text padding infection
-	r := analyser.CheckTextPaddingInfection(av.a_elf.E_file)
+	r := analyser.CheckSegmentInfections(av.a_elf.E_file)
 	if r.R_class == analyser.ELF_TEXT_PADDING {
 		for i := 0; i < len(r.R_info); i++ {
 			av.a_analysis_report.Rows = append(av.a_analysis_report.Rows, r.R_info[i])
 		}
 	}
 	increasePercent(3, av.a_guage)
+	ui.Render(av.a_grid)
+	return nil
+}
+
+func (av *AnalysisView) StartDisInfection() error {
+	if r := disinfect.DisinfectTextPaddingInfection(av.a_elf.E_file); r != nil {
+		for i := 0; i < len(r); i++ {
+			av.a_analysis_report.Rows = append(av.a_analysis_report.Rows, r[i])
+		}
+	}
+	av.a_analysis_report.Rows = append(av.a_analysis_report.Rows, "")
+
+	if r := disinfect.DisinfectDataSegmentInfection(av.a_elf.E_file); r != nil {
+		for i := 0; i < len(r); i++ {
+			av.a_analysis_report.Rows = append(av.a_analysis_report.Rows, r[i])
+		}
+	}
+	av.a_analysis_report.Rows = append(av.a_analysis_report.Rows, "")
 	ui.Render(av.a_grid)
 	return nil
 }

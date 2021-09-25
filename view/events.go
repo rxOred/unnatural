@@ -13,6 +13,9 @@ func (av *AnalysisView) Eventloop(ev *ErrorView) {
 	signal.Notify(sig_term, os.Interrupt, syscall.SIGTERM)
 
 	var highlight int8 = 0
+	done := false
+
+	prevkey := ""
 
 	for e := range ui.PollEvents() {
 		if e.Type == ui.KeyboardEvent {
@@ -23,6 +26,15 @@ func (av *AnalysisView) Eventloop(ev *ErrorView) {
 			case "<C-s>":
 				if err := av.StartAnalysis(); err != nil {
 					ShowErrorView(ev, err.Error())
+				}
+				done = true
+
+			case "<C-d>":
+				// dis infect
+				if done {
+					if err := av.StartDisInfection(); err != nil {
+						ShowErrorView(ev, err.Error())
+					}
 				}
 
 			case "<Left>":
@@ -46,7 +58,23 @@ func (av *AnalysisView) Eventloop(ev *ErrorView) {
 			case "<Up>":
 				av.a_selected_list.ScrollUp()
 				ui.Render(av.a_grid)
+
+			case "g":
+				if prevkey == "g" {
+					av.a_selected_list.ScrollTop()
+					ui.Render(av.a_grid)
+				}
+
+			case "G":
+				av.a_selected_list.ScrollBottom()
+				ui.Render(av.a_grid)
+
+			default:
+				av.a_analysis_report.Rows = append(av.a_analysis_report.Rows, prevkey)
+				av.a_analysis_report.Rows = append(av.a_analysis_report.Rows, e.ID)
 			}
+
+			prevkey = e.ID
 		}
 	}
 }
