@@ -150,7 +150,7 @@ func (av *AnalysisView) StartAnalysis() error {
 	av.a_guage.Title = "Analysing"
 	ui.Render(av.a_grid)
 
-	// text padding infection
+	// detect segment padding infections
 	r := analyser.CheckSegmentInfections(av.a_elf.E_file)
 	if r.R_class == analyser.ELF_TEXT_PADDING {
 		for i := 0; i < len(r.R_info); i++ {
