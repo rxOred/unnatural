@@ -29,23 +29,23 @@ type Phdr struct {
 }
 
 type Shdr struct {
-	sh_name      uint32
-	sh_type      uint32
-	sh_flags     uint32
-	sh_addr      uint64
-	sh_offset    uint64
-	sh_size      uint32
-	sh_link      uint32
-	sh_info      uint32
-	sh_addralign uint32
-	sh_entsize   uint32
+	ShName      uint32
+	ShType      uint32
+	ShFlags     uint32
+	ShAddr      uint64
+	ShOffset    uint64
+	ShSize      uint32
+	ShLink      uint32
+	ShInfo      uint32
+	ShAddralign uint32
+	ShEntsize   uint32
 }
 
 type Sym struct {
-	st_name  uint32
-	st_value uint64
-	st_size  uint64
-	st_info  byte
-	st_other byte
-	st_shndx uint16
+	StName  uint32
+	StValue uint64
+	StSize  uint64
+	StInfo  byte
+	StOther byte
+	StShndx uint16
 }
