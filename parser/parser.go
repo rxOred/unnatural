@@ -1,93 +1,35 @@
 package parser
 
 import (
-	"debug/elf"
-	"io"
-	"os"
-	"strconv"
+	"errors"
+
+	mmap "github.com/edsrzf/mmap-go"
 )
 
-type Parser interface {
-	GetElfHeader() []string
-	GetSectionHeaders() []string
-	GetSymbols() []string
+type ElfFile struct {
+	pathname  string
+	memmap    mmap.MMap
+	elfHeader Ehdr
+	phdr      []Phdr
+	shdr      []Shdr
 }
 
-// this needs to be exported
-type Elf struct {
-	E_pathname string
-	E_file     *elf.File
-}
-
-func (e *Elf) GetSectionHeaders() []string {
-	var arr []string
-	sections := e.E_file.Sections
-	for i := 0; i < len(sections); i++ {
-		arr = append(arr, sections[i].Name)
-	}
-	return arr
-}
-
-func (e *Elf) GetSymbols() []string {
-	var arr []string
-
-	sym, err := e.E_file.Symbols()
+func LoadElf(e *ElfFile, pathname string) error {
+	m, err := openFile(pathname)
 	if err != nil {
-		arr = append(arr, "no symbols found")
-		return arr
-	}
-	for i := 0; i < len(sym); i++ {
-		arr = append(arr, sym[i].Name)
+		return err
 	}
 
-	if e.E_file.Type == elf.ET_DYN {
-		dynsym, err := e.E_file.DynamicSymbols()
-		if err != nil {
-			arr = append(arr, "no dynamic symbols found")
-			return arr
-		}
-		for i := 0; i < len(dynsym); i++ {
-			arr = append(arr, dynsym[i].Name)
-		}
+	e.memmap = m
+	e.pathname = pathname
+	e.elfHeader = e.memmap
+
+	if verifyElf(e.elfHeader.EIdent[:]) == false {
+		return errors.New("Not an Elf binary")
 	}
-	return arr
-}
 
-func (e *Elf) GetElfHeader() []string {
-	var arr []string
+	e.phdr = &e.memmap[e.elfHeader.EPhoff]
+	e.shdr = &e.memmap[e.elfHeader.EShoff]
 
-	arr = append(arr, "class :"+e.E_file.Class.String())
-	arr = append(arr, "data :"+e.E_file.Data.String())
-	arr = append(arr, "version :"+e.E_file.Version.String())
-	arr = append(arr, "os abi :"+e.E_file.OSABI.String())
-	arr = append(arr, "abi version :"+strconv.Itoa(int(e.E_file.ABIVersion)))
-	arr = append(arr, "byteorder :"+e.E_file.ByteOrder.String())
-	arr = append(arr, "type :"+e.E_file.Type.String())
-	arr = append(arr, "machine :"+e.E_file.Machine.String())
-	arr = append(arr, "entry : 0x"+strconv.FormatUint(e.E_file.Entry, 16))
-
-	return arr
-}
-
-func ioReader(file string) (io.ReaderAt, error) {
-	r, err := os.Open(file)
-	if err != nil {
-		return nil, err
-	}
-	return r, nil
-}
-
-func InitElf(file string) (*Elf, error) {
-	r, err := ioReader(file)
-	if err != nil {
-		return nil, err
-	}
-	f, err := elf.NewFile(r)
-	if err != nil {
-		return nil, err
-	}
-	e := new(Elf)
-	e.E_file = f
-	e.E_pathname = file
-	return e, nil
+	return nil
 }
