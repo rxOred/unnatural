@@ -15,7 +15,8 @@ type Parser interface {
 
 // this needs to be exported
 type Elf struct {
-	E_file *elf.File
+	E_pathname string
+	E_file     *elf.File
 }
 
 func (e *Elf) GetSectionHeaders() []string {
@@ -87,5 +88,6 @@ func InitElf(file string) (*Elf, error) {
 	}
 	e := new(Elf)
 	e.E_file = f
+	e.E_pathname = file
 	return e, nil
 }
