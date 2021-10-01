@@ -9,15 +9,37 @@ import (
 type ElfFile struct {
 	pathname  string
 	memmap    mmap.MMap
-	elfHeader Ehdr
-	phdr      []Phdr
-	shdr      []Shdr
+	ElfHeader Ehdr
+	Phdr      []Phdr
+	Shdr      []Shdr
 	symtab    []Sym
 	strtab    []byte
 }
 
+func (e *ElfFile) GetSectionNames() []string {
+	var str []string
+	if e.ElfHeader.EShstrndx == 0 {
+		str = append(str, "section header string table is empty")
+		return str
+	}
+
+	shstrtab := &e.memmap[e.elfHeader.EShstrndx]
+	for i := 0; i < len(e.Shdr); i++ {
+		str = append(str, &shstrtab[e.Shdr[i].ShName])
+	}
+	return str
+}
+
+func (e *ElfFile) GetSymbolNames() []string {
+	var str []string
+	for i := 0; i < len(e.Sym); i++ {
+		// NOTE check which string table
+		str = append(str)
+	}
+}
+
 func (e *ElfFile) GetSectionIndexByName(name string) (int, error) {
-	if e.elfHeader.EShstrndx == 0 {
+	if e.ElfHeader.EShstrndx == 0 {
 		return 0, errors.New("section header string table is empty")
 	}
 	shstrtab := &e.memmap[e.elfHeader.EShstrndx]
@@ -39,12 +61,12 @@ func LoadElf(e *ElfFile, pathname string) error {
 	e.pathname = pathname
 	e.elfHeader = e.memmap
 
-	if verifyElf(e.elfHeader.EIdent[:]) == false {
+	if verifyElf(e.ElfHeader.EIdent[:]) == false {
 		return errors.New("Not an Elf binary")
 	}
 
-	e.phdr = &e.memmap[e.elfHeader.EPhoff]
-	e.shdr = &e.memmap[e.elfHeader.EShoff]
+	e.Phdr = &e.memmap[e.elfHeader.EPhoff]
+	e.Shdr = &e.memmap[e.elfHeader.EShoff]
 	symtab_index, err := e.GetSectionIndexByName(".symtab")
 	if err == nil && symtab_index != 0 {
 		e.symtab = &e.memmap[e.shdr[symtab_index].ShOffset]
