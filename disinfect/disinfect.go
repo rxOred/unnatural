@@ -3,17 +3,19 @@ package disinfect
 import (
 	"debug/elf"
 	"strconv"
+
+	parser "github.com/rxOred/unnatural/parser"
 )
 
-func DisinfectTextPaddingInfection(f *elf.File) []string {
-	sec := f.Section(".init")
-	for i := 0; i < len(f.Progs); i++ {
-		if f.Progs[i].Type == elf.PT_LOAD && f.Progs[i].Flags == elf.PF_R|elf.PF_X {
-			if sec.Addr >= f.Progs[i].Vaddr && sec.Addr < f.Progs[i].Vaddr+f.Progs[i].Memsz {
-				f.Entry = sec.Addr
+func DisinfectTextPaddingInfection(ef *parser.Elf) []string {
+	sec := ef.E_file.Section(".init")
+	for i := 0; i < len(ef.E_file.Progs); i++ {
+		if ef.E_file.Progs[i].Type == elf.PT_LOAD && ef.E_file.Progs[i].Flags == elf.PF_R|elf.PF_X {
+			if sec.Addr >= ef.E_file.Progs[i].Vaddr && sec.Addr < ef.E_file.Progs[i].Vaddr+ef.E_file.Progs[i].Memsz {
+				ef.E_file.Entry = sec.Addr
 				r := []string{
 					"[SUCESSFUL] Disinfected text padding infection",
-					"Fixed entry point : 0x" + strconv.FormatUint(uint64(f.Entry), 16),
+					"Fixed entry point : 0x" + strconv.FormatUint(uint64(ef.E_file.Entry), 16),
 				}
 				return r
 			}
@@ -22,8 +24,8 @@ func DisinfectTextPaddingInfection(f *elf.File) []string {
 	return nil
 }
 
-func DisinfectDataSegmentInfection(f *elf.File) []string {
-	if r := DisinfectTextPaddingInfection(f); r != nil {
+func DisinfectDataSegmentInfection(ef *parser.Elf) []string {
+	if r := DisinfectTextPaddingInfection(ef); r != nil {
 		r[0] = "[SUCESSFUL] Disinfected data segment infection"
 	}
 	return nil
