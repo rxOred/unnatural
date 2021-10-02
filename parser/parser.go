@@ -1,14 +1,15 @@
 package parser
 
 import (
-	"errors"
+	"debug/elf"
+	"encoding/binary"
+	"strconv"
 
-	mmap "github.com/edsrzf/mmap-go"
+	"github.com/ghostiam/binstruct"
 )
 
 type ElfFile struct {
 	pathname  string
-	memmap    mmap.MMap
 	ElfHeader Ehdr
 	Phdr      []Phdr
 	Shdr      []Shdr
@@ -16,65 +17,63 @@ type ElfFile struct {
 	strtab    []byte
 }
 
-func (e *ElfFile) GetSectionNames() []string {
+func (e *ElfFile) GetElfHeader() []string {
 	var str []string
-	if e.ElfHeader.EShstrndx == 0 {
-		str = append(str, "section header string table is empty")
-		return str
+	switch e.ElfHeader.EType {
+	case uint16(elf.ET_REL):
+		str = append(str, "Type :"+elf.ET_REL.String())
+	case uint16(elf.ET_EXEC):
+		str = append(str, "Type :"+elf.ET_EXEC.String())
+	case uint16(elf.ET_DYN):
+		str = append(str, "Type :"+elf.ET_DYN.String())
+	case uint16(elf.ET_CORE):
+		str = append(str, "Type :"+elf.ET_CORE.String())
+	default:
+		str = append(str, "Type :"+"none")
 	}
 
-	shstrtab := &e.memmap[e.elfHeader.EShstrndx]
-	for i := 0; i < len(e.Shdr); i++ {
-		str = append(str, &shstrtab[e.Shdr[i].ShName])
+	switch e.ElfHeader.EMachine {
+	case uint16(elf.EM_386):
+		str = append(str, "Machine :"+elf.EM_386.String())
+	case uint16(elf.EM_MIPS):
+		str = append(str, "Machine :"+elf.EM_MIPS.String())
+	case uint16(elf.EM_ARM):
+		str = append(str, "Machine :"+elf.EM_ARM.String())
+	case uint16(elf.EM_X86_64):
+		str = append(str, "Machine :"+elf.EM_X86_64.String())
+	default:
+		str = append(str, "Machine :"+"none")
 	}
+
+	switch e.ElfHeader.EVersion {
+	case uint32(elf.EV_CURRENT):
+		str = append(str, "Version :"+elf.EV_CURRENT.String())
+	default:
+		str = append(str, "Version :"+elf.EV_NONE.String())
+	}
+
+	str = append(str, "Entry :"+strconv.FormatUint(e.ElfHeader.EEntry, 16))
+	str = append(str, "Phoff :"+strconv.FormatUint(e.ElfHeader.EPhoff, 16))
+	str = append(str, "Shoff :"+strconv.FormatUint(e.ElfHeader.EShoff, 16))
+	str = append(str, "Phnum :"+strconv.FormatUint(uint64(e.ElfHeader.EPhnum), 10))
+	str = append(str, "Shnum :"+strconv.FormatUint(uint64(e.ElfHeader.EShnum), 10))
+	str = append(str, "Shstrndx :"+strconv.FormatUint(uint64(e.ElfHeader.EShstrndx), 10))
 	return str
 }
 
-func (e *ElfFile) GetSymbolNames() []string {
-	var str []string
-	for i := 0; i < len(e.Sym); i++ {
-		// NOTE check which string table
-		str = append(str)
-	}
-}
-
-func (e *ElfFile) GetSectionIndexByName(name string) (int, error) {
-	if e.ElfHeader.EShstrndx == 0 {
-		return 0, errors.New("section header string table is empty")
-	}
-	shstrtab := &e.memmap[e.elfHeader.EShstrndx]
-	for i := 0; i < len(shstrtab); i++ {
-		if shstrtab+i == name {
-			return i, nil
-		}
-	}
-	return 0, errors.New("Could not find the section")
-}
+// whole parser thing should be changed to read from file
 
 func LoadElf(e *ElfFile, pathname string) error {
-	m, err := openFile(pathname)
+	e.pathname = pathname
+	f, err := openFile(pathname)
 	if err != nil {
 		return err
 	}
 
-	e.memmap = m
-	e.pathname = pathname
-	e.elfHeader = e.memmap
-
-	if verifyElf(e.ElfHeader.EIdent[:]) == false {
-		return errors.New("Not an Elf binary")
-	}
-
-	e.Phdr = &e.memmap[e.elfHeader.EPhoff]
-	e.Shdr = &e.memmap[e.elfHeader.EShoff]
-	symtab_index, err := e.GetSectionIndexByName(".symtab")
-	if err == nil && symtab_index != 0 {
-		e.symtab = &e.memmap[e.shdr[symtab_index].ShOffset]
-	}
-
-	strtab_index, err := e.GetSectionIndexByName(".strtab")
-	if err == nil && strtab_index != 0 {
-		e.strtab = &e.memmap[e.shdr[strtab_index].ShOffset]
+	decorder := binstruct.NewDecoder(f, binary.LittleEndian)
+	err = decorder.Decode(&e.ElfHeader)
+	if err != nil {
+		return err
 	}
 
 	return nil
