@@ -2,23 +2,14 @@ package parser
 
 import (
 	"os"
-
-	mmap "github.com/edsrzf/mmap-go"
 )
 
-func openFile(pathname string) (mmap.MMap, error) {
+func openFile(pathname string) (*os.File, error) {
 	f, err := os.OpenFile(pathname, os.O_RDWR, 0666)
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
-
-	mmap, err := mmap.Map(f, mmap.RDWR, 0)
-	if err != nil {
-		return nil, err
-	}
-
-	return mmap, nil
+	return f, nil
 }
 
 func verifyElf(ident []byte) bool {
