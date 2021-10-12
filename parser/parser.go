@@ -63,6 +63,15 @@ func (e *ElfFile) GetElfHeader() []string {
 	return str
 }
 
+func (e *ElfFile) GetSectionHeaders() []string {
+	var str []string
+	for i := 0; i< len(e.Shdr); i++ {
+		switch e.Shdr[i].ShName {
+			str = append(str, )
+		}
+	}
+}
+
 func (e *ElfFile) GetProgHeaders() []string {
 	var str []string
 	for i := 0; i < len(e.Phdr); i++ {
@@ -119,7 +128,7 @@ func LoadElf(e *ElfFile, pathname string) error {
 
 	for i := 0; i < int(e.ElfHeader.EShnum); i++ {
 		f.Seek(int64(e.ElfHeader.EPhoff+uint64(i*int(e.ElfHeader.EShentsize))), os.SEEK_SET)
-		decorder = binstruct.NewDecoder(f, binary.LittleEndian)
+		decoder = binstruct.NewDecoder(f, binary.LittleEndian)
 		sh := new(Shdr)
 		err = decoder.Decode(sh)
 		e.Shdr = append(e.Shdr, sh)
