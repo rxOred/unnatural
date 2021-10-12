@@ -21,6 +21,7 @@ func (av *AnalysisView) Eventloop(ev *ErrorView) {
 		if e.Type == ui.KeyboardEvent {
 			switch e.ID {
 			case "<C-c>":
+				ui.Clear()
 				os.Exit(1)
 
 			case "<C-s>":

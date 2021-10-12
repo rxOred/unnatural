@@ -203,8 +203,8 @@ func InitAnalysisWidgets(av *AnalysisView, ev *ErrorView, pathname string) {
 	increasePercent(10, av.a_guage)
 
 	av.a_symbol_list.Rows = av.a_elf.GetSectionNames()
-	av.a_elf_header_list.Rows = header
-	av.a_section_list.Rows = sections
+	av.a_elf_header_list.Rows = // header
+	av.a_section_list.Rows = // sections
 
 	increasePercent(10, av.a_guage)
 }
