@@ -3,6 +3,8 @@ package parser
 import (
 	"debug/elf"
 	"encoding/binary"
+	"errors"
+	"os"
 	"strconv"
 
 	"github.com/ghostiam/binstruct"
@@ -11,9 +13,9 @@ import (
 type ElfFile struct {
 	pathname  string
 	ElfHeader Ehdr
-	Phdr      []Phdr
-	Shdr      []Shdr
-	symtab    []Sym
+	Phdr      []*Phdr
+	Shdr      []*Shdr
+	symtab    **Sym
 	strtab    []byte
 }
 
@@ -61,6 +63,37 @@ func (e *ElfFile) GetElfHeader() []string {
 	return str
 }
 
+func (e *ElfFile) GetProgHeaders() []string {
+	var str []string
+	for i := 0; i < len(e.Phdr); i++ {
+		switch e.Phdr[i].PType {
+		case uint32(elf.PT_LOAD):
+			str = append(str, elf.PT_LOAD.String())
+		case uint32(elf.PT_DYNAMIC):
+			str = append(str, elf.PT_DYNAMIC.String())
+		case uint32(elf.PT_INTERP):
+			str = append(str, elf.PT_INTERP.String())
+		default:
+			str = append(str, "none")
+		}
+
+		str = append(str, strconv.FormatUint(e.Phdr[i].POffset, 16))
+		str = append(str, strconv.FormatUint(e.Phdr[i].PVaddr, 16))
+		str = append(str, strconv.FormatUint(e.Phdr[i].PPaddr, 16))
+	}
+
+	return str
+}
+
+func (e *ElfFile) GetSegmentIndexByType(ptype uint32) (*Phdr, error) {
+	for i := 0; i < len(e.Phdr); i++ {
+		if e.Phdr[i].PType == ptype {
+			return e.Phdr[i], nil
+		}
+	}
+	return nil, errors.New("Segment not found")
+}
+
 // whole parser thing should be changed to read from file
 
 func LoadElf(e *ElfFile, pathname string) error {
@@ -70,11 +103,26 @@ func LoadElf(e *ElfFile, pathname string) error {
 		return err
 	}
 
-	decorder := binstruct.NewDecoder(f, binary.LittleEndian)
-	err = decorder.Decode(&e.ElfHeader)
+	decoder := binstruct.NewDecoder(f, binary.LittleEndian)
+	err = decoder.Decode(&e.ElfHeader)
 	if err != nil {
 		return err
 	}
 
+	for i := 0; i < int(e.ElfHeader.EPhnum); i++ {
+		f.Seek(int64(e.ElfHeader.EPhoff+uint64(i*int(e.ElfHeader.EPhentsize))), os.SEEK_SET)
+		decoder = binstruct.NewDecoder(f, binary.LittleEndian)
+		ph := new(Phdr)
+		err = decoder.Decode(ph)
+		e.Phdr = append(e.Phdr, ph)
+	}
+
+	for i := 0; i < int(e.ElfHeader.EShnum); i++ {
+		f.Seek(int64(e.ElfHeader.EPhoff+uint64(i*int(e.ElfHeader.EShentsize))), os.SEEK_SET)
+		decorder = binstruct.NewDecoder(f, binary.LittleEndian)
+		sh := new(Shdr)
+		err = decoder.Decode(sh)
+		e.Shdr = append(e.Shdr, sh)
+	}
 	return nil
 }
