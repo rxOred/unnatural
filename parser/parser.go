@@ -31,7 +31,9 @@ func (e *ElfFile) ParseStringTable(f *os.File, shstrndx int) (string, error) {
 		return nil, errors.New("Failed to find section header string table")
 	}
 
+	//var b [e.Shdr[shstrndx].ShSize]byte
 	f.Seek(int64(e.Shdr[shstrndx].ShOffset), os.SEEK_SET)
+	// read the section header string table
 
 }
 
