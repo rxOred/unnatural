@@ -11,12 +11,28 @@ import (
 )
 
 type ElfFile struct {
-	pathname  string
-	ElfHeader Ehdr
-	Phdr      []*Phdr
-	Shdr      []*Shdr
-	symtab    **Sym
-	strtab    []byte
+	pathname  string  // pathname
+	ElfHeader Ehdr    // elf header
+	Phdr      []*Phdr // program header table
+	Shdr      []*Shdr // section header table
+	symtab    []*Sym  // symbol table
+	strtab    []byte  // string table
+}
+
+func (e *ElfFile) GetSectionName(index int) (string, error) {
+	if e.ElfHeader.EShstrndx == 0 {
+		return "fail", errors.New("shstrndx not found")
+	}
+
+}
+
+func (e *ElfFile) ParseStringTable(f *os.File, shstrndx int) (string, error) {
+	if shstrndx <= 0 {
+		return nil, errors.New("Failed to find section header string table")
+	}
+
+	f.Seek(int64(e.Shdr[shstrndx].ShOffset), os.SEEK_SET)
+
 }
 
 func (e *ElfFile) GetElfHeader() []string {
@@ -63,32 +79,30 @@ func (e *ElfFile) GetElfHeader() []string {
 	return str
 }
 
-func (e *ElfFile) GetSectionHeaders() []string {
-	var str []string
-	for i := 0; i< len(e.Shdr); i++ {
-		switch e.Shdr[i].ShName {
-			str = append(str, )
-		}
+func (e *ElfFile) GetSectionHeaders() [][]string {
+	var str [][]string
+	for i := 0; i < len(e.Shdr); i++ {
+		str[i] = append(str[i], GetSectionName(e.Shdr[i].ShName))
 	}
 }
 
-func (e *ElfFile) GetProgHeaders() []string {
-	var str []string
+func (e *ElfFile) GetProgHeaders() [][]string {
+	var str [][]string
 	for i := 0; i < len(e.Phdr); i++ {
 		switch e.Phdr[i].PType {
 		case uint32(elf.PT_LOAD):
-			str = append(str, elf.PT_LOAD.String())
+			str[i] = append(str[i], elf.PT_LOAD.String())
 		case uint32(elf.PT_DYNAMIC):
-			str = append(str, elf.PT_DYNAMIC.String())
+			str[i] = append(str[i], elf.PT_DYNAMIC.String())
 		case uint32(elf.PT_INTERP):
-			str = append(str, elf.PT_INTERP.String())
+			str[i] = append(str[i], elf.PT_INTERP.String())
 		default:
-			str = append(str, "none")
+			str[i] = append(str[i], "none")
 		}
 
-		str = append(str, strconv.FormatUint(e.Phdr[i].POffset, 16))
-		str = append(str, strconv.FormatUint(e.Phdr[i].PVaddr, 16))
-		str = append(str, strconv.FormatUint(e.Phdr[i].PPaddr, 16))
+		str[i] = append(str[i], strconv.FormatUint(e.Phdr[i].POffset, 16))
+		str[i] = append(str[i], strconv.FormatUint(e.Phdr[i].PVaddr, 16))
+		str[i] = append(str[i], strconv.FormatUint(e.Phdr[i].PPaddr, 16))
 	}
 
 	return str
@@ -133,5 +147,7 @@ func LoadElf(e *ElfFile, pathname string) error {
 		err = decoder.Decode(sh)
 		e.Shdr = append(e.Shdr, sh)
 	}
+
+	e.strtab = ParseStringTable(f, e.ElfHeader.EShstrndx)
 	return nil
 }
