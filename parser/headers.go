@@ -1,5 +1,11 @@
 package parser
 
+const (
+	ELFHEADER_ENTRY_COUNT  = 14
+	PHDR_TABLE_ENTRY_COUNT = 8
+	SHDR_TABLE_ENTRY_COUNT = 10
+)
+
 type Ehdr struct {
 	EIdent     [16]byte
 	EType      uint16

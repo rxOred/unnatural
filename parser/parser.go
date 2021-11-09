@@ -99,25 +99,31 @@ func (e *ElfFile) GetSectionHeaders() [][]string {
 
 // return program header table in an array of string arrays
 func (e *ElfFile) GetProgHeaders() [][]string {
-	var str [][]string
+	var hdrtab [][]string
 	for i := 0; i < int(e.ElfHeader.EPhnum); i++ {
+		str := make([]string, PHDR_TABLE_ENTRY_COUNT)
 		switch e.Phdr[i].PType {
 		case uint32(elf.PT_LOAD):
-			str[i] = append(str[i], elf.PT_LOAD.String())
+			str[i] = elf.PT_LOAD.String()
 		case uint32(elf.PT_DYNAMIC):
-			str[i] = append(str[i], elf.PT_DYNAMIC.String())
+			str[i] = elf.PT_DYNAMIC.String()
 		case uint32(elf.PT_INTERP):
-			str[i] = append(str[i], elf.PT_INTERP.String())
+			str[i] = elf.PT_INTERP.String()
 		default:
-			str[i] = append(str[i], "none")
+			str[i] = "none"
 		}
-
-		str[i] = append(str[i], strconv.FormatUint(e.Phdr[i].POffset, 16))
-		str[i] = append(str[i], strconv.FormatUint(e.Phdr[i].PVaddr, 16))
-		str[i] = append(str[i], strconv.FormatUint(e.Phdr[i].PPaddr, 16))
+		str[i] = strconv.FormatUint(e.Phdr[i].POffset, 16)
+		str[i] = strconv.FormatUint(e.Phdr[i].PVaddr, 16)
+		str[i] = strconv.FormatUint(e.Phdr[i].PPaddr, 16)
+  		str[i] = strconv.FormatUint(uint64(e.Phdr[i].PFilesz), 10)
+		str[i] = strconv.FormatUintint(uint64(e.Phdr[i].PMemsz), 10)
+		switch e.Phdr[i].PFlags {
+			case uint32(elf.)
+		}
+		str[i] = strconv.FormatInt(int64(e.Phdr[i].PAlign), 10)
+		hdrtab = append(hdrtab, str)
 	}
-
-	return str
+	return hdrtab
 }
 
 // get first segment of a segment type
@@ -171,7 +177,7 @@ func LoadElf(e *ElfFile, pathname string) error {
 		e.Phdr = append(e.Phdr, ph)
 	}
 
-	fmt.Println(len(e.Phdr), e.ElfHeader.EPhnum)
+	fmt.Println("phdr", len(e.Phdr), e.ElfHeader.EPhnum)
 
 	// parsing section header table
 	for i := 0; i < int(e.ElfHeader.EShnum); i++ {
