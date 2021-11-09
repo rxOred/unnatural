@@ -55,8 +55,8 @@ func main() {
 		fmt.Println(str[i])
 	}
 
-	//	str2 := e.GetProgHeaders()
-	//	for i := 0; i < len(str2); i++ {
-	//		fmt.Println(str2[i])
-	//	}
+	str2 := e.GetProgHeaders()
+	for i := 0; i < int(e.ElfHeader.EPhnum); i++ {
+		fmt.Println(str2[i])
+	}
 }
