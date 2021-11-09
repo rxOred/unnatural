@@ -19,24 +19,28 @@ type ElfFile struct {
 	strtab    []byte  // string table
 }
 
+// return name of a section from the index
 func (e *ElfFile) GetSectionName(index int) (string, error) {
 	if e.ElfHeader.EShstrndx == 0 {
 		return "fail", errors.New("shstrndx not found")
 	}
 
+    return &e.strtab[index], nil
 }
 
-func (e *ElfFile) ParseStringTable(f *os.File, shstrndx int) (string, error) {
+func (e *ElfFile) ParseSectionHeaderStringTable(f *os.File, shstrndx int) error {
 	if shstrndx <= 0 {
-		return nil, errors.New("Failed to find section header string table")
+		return errors.New("Failed to find section header string table")
 	}
 
 	//var b [e.Shdr[shstrndx].ShSize]byte
 	f.Seek(int64(e.Shdr[shstrndx].ShOffset), os.SEEK_SET)
-	// read the section header string table
-
+    decoder := binstruct.NewDecoder(f, binary.LittleEndian)
+    err := decoder.Decode(strtab)
+    return err;
 }
 
+// return elf header in a string array
 func (e *ElfFile) GetElfHeader() []string {
 	var str []string
 	switch e.ElfHeader.EType {
@@ -81,6 +85,7 @@ func (e *ElfFile) GetElfHeader() []string {
 	return str
 }
 
+// return section header table in an array of string arrays
 func (e *ElfFile) GetSectionHeaders() [][]string {
 	var str [][]string
 	for i := 0; i < len(e.Shdr); i++ {
@@ -88,6 +93,7 @@ func (e *ElfFile) GetSectionHeaders() [][]string {
 	}
 }
 
+// return program header table in an array of string arrays
 func (e *ElfFile) GetProgHeaders() [][]string {
 	var str [][]string
 	for i := 0; i < len(e.Phdr); i++ {
@@ -110,7 +116,8 @@ func (e *ElfFile) GetProgHeaders() [][]string {
 	return str
 }
 
-func (e *ElfFile) GetSegmentIndexByType(ptype uint32) (*Phdr, error) {
+// get first segment of a segment type
+func (e *ElfFile) GetSegmentByType(ptype uint32) (*Phdr, error) {
 	for i := 0; i < len(e.Phdr); i++ {
 		if e.Phdr[i].PType == ptype {
 			return e.Phdr[i], nil
@@ -119,21 +126,36 @@ func (e *ElfFile) GetSegmentIndexByType(ptype uint32) (*Phdr, error) {
 	return nil, errors.New("Segment not found")
 }
 
-// whole parser thing should be changed to read from file
+// get the n segment of a segment type
+func (e *ElfFile) GetNSegmentByType(ptype uint32, n int) (*Phdr, error) {
+    k := 0
+    for i := 0; i < len(e.Phdr); i++ {
+        if e.Phdr[i].PType == ptype {
+            k++
+            if k == n {
+                return e.Phdr[i], nil
+            }
+        }
+    }
+    return nil, errors.New("Segment not found")
+}
 
+// parse the whole elf binary
 func LoadElf(e *ElfFile, pathname string) error {
 	e.pathname = pathname
 	f, err := openFile(pathname)
 	if err != nil {
 		return err
-	}
+    }
 
-	decoder := binstruct.NewDecoder(f, binary.LittleEndian)
+    // parsing elf header
+    decoder := binstruct.NewDecoder(f, binary.LittleEndian)
 	err = decoder.Decode(&e.ElfHeader)
 	if err != nil {
 		return err
 	}
 
+    // parsing program header table
 	for i := 0; i < int(e.ElfHeader.EPhnum); i++ {
 		f.Seek(int64(e.ElfHeader.EPhoff+uint64(i*int(e.ElfHeader.EPhentsize))), os.SEEK_SET)
 		decoder = binstruct.NewDecoder(f, binary.LittleEndian)
@@ -142,6 +164,7 @@ func LoadElf(e *ElfFile, pathname string) error {
 		e.Phdr = append(e.Phdr, ph)
 	}
 
+    // parsing section header table
 	for i := 0; i < int(e.ElfHeader.EShnum); i++ {
 		f.Seek(int64(e.ElfHeader.EPhoff+uint64(i*int(e.ElfHeader.EShentsize))), os.SEEK_SET)
 		decoder = binstruct.NewDecoder(f, binary.LittleEndian)
