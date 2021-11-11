@@ -2,6 +2,7 @@ package view
 
 import (
 	"fmt"
+	"strconv"
 
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
@@ -12,7 +13,7 @@ import (
 
 // Analysis view
 type AnalysisView struct {
-	a_elf             *parser.Elf
+	a_elf             parser.ElfFile
 	a_grid            *ui.Grid
 	a_header          *widgets.Paragraph
 	a_guage           *widgets.Gauge
@@ -36,10 +37,6 @@ const (
 	ANA_SECTIONS_HI     int8 = 1
 	ANA_SYMBOLS_HI      int8 = 2
 	ANA_ANALYSIS_REPORT int8 = 3
-)
-
-var (
-	p parser.Parser
 )
 
 // creates and return a new list
@@ -151,7 +148,7 @@ func (av *AnalysisView) StartAnalysis() error {
 	ui.Render(av.a_grid)
 
 	// detect segment padding infections
-	r := analyser.CheckSegmentInfections(av.a_elf.E_file)
+	r := analyser.CheckSegmentInfections(av.a_elf.File)
 	if r.R_class == analyser.ELF_TEXT_PADDING {
 		for i := 0; i < len(r.R_info); i++ {
 			av.a_analysis_report.Rows = append(av.a_analysis_report.Rows, r.R_info[i])
@@ -163,25 +160,28 @@ func (av *AnalysisView) StartAnalysis() error {
 }
 
 func (av *AnalysisView) StartDisInfection() error {
-	if r := disinfect.DisinfectTextPaddingInfection(av.a_elf.E_file); r != nil {
+	if r := disinfect.DisinfectTextPaddingInfection(av.a_elf); r != nil {
 		for i := 0; i < len(r); i++ {
 			av.a_analysis_report.Rows = append(av.a_analysis_report.Rows, r[i])
 		}
 	}
 	av.a_analysis_report.Rows = append(av.a_analysis_report.Rows, "")
 
-	if r := disinfect.DisinfectDataSegmentInfection(av.a_elf.E_file); r != nil {
+	if r := disinfect.DisinfectDataSegmentInfection(av.a_elf); r != nil {
 		for i := 0; i < len(r); i++ {
 			av.a_analysis_report.Rows = append(av.a_analysis_report.Rows, r[i])
 		}
 	}
 	av.a_analysis_report.Rows = append(av.a_analysis_report.Rows, "")
+	av.a_analysis_report.Rows = append(av.a_analysis_report.Rows, strconv.FormatUint(av.a_elf.File.Entry, 16))
 	ui.Render(av.a_grid)
+
+	disinfect.SaveFile(av.a_elf)
 	return nil
 }
 
-func InitAnalysisWidgets(av *AnalysisView, ev *ErrorView, file string) {
-	text := fmt.Sprintf("\t\tunnatural - Elf anomaly detector and disinfector\t\t\nTarget: %s", file)
+func InitAnalysisWidgets(av *AnalysisView, ev *ErrorView, pathname string) {
+	text := fmt.Sprintf("\t\tunnatural - Elf anomaly detector and disinfector\t\t\nTarget: %s", pathname)
 	av.a_header = CreateParagraph("", text, true, ui.ColorYellow, ui.ColorCyan)
 	av.a_guage = CreateGuage("", 0, ui.ColorYellow, ui.ColorCyan)
 
@@ -196,20 +196,15 @@ func InitAnalysisWidgets(av *AnalysisView, ev *ErrorView, file string) {
 	if err != nil {
 		ShowErrorView(ev, err.Error())
 	}
-	if av.a_elf, err = parser.InitElf(file); err != nil {
+	if err = parser.LoadElf(&av.a_elf, pathname); err != nil {
 		ShowErrorView(ev, err.Error())
 	}
 
-	p = av.a_elf
-	header := p.GetElfHeader()
-	sections := p.GetSectionHeaders()
-	symbols := p.GetSymbols()
-
 	increasePercent(10, av.a_guage)
 
-	av.a_symbol_list.Rows = symbols
-	av.a_elf_header_list.Rows = header
-	av.a_section_list.Rows = sections
+	av.a_symbol_list.Rows = av.a_elf.GetSectionNames()
+	av.a_elf_header_list.Rows = // header
+	av.a_section_list.Rows = // sections
 
 	increasePercent(10, av.a_guage)
 }

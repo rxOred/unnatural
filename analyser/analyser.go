@@ -22,6 +22,7 @@ type Report struct {
 	R_info []string
 }
 
+// we dont need parser.Elf cause we only need the elf binary
 func CheckSegmentInfections(f *elf.File) Report {
 	var r Report
 
@@ -29,6 +30,8 @@ func CheckSegmentInfections(f *elf.File) Report {
 	for i := 0; i < len(f.Progs); i++ {
 		if f.Progs[i].Type == elf.PT_LOAD && f.Progs[i].Flags == elf.PF_R|elf.PF_X {
 			if f.Entry > f.Progs[i].Vaddr {
+
+				// more code here
 				// init the structure, assign values, then return
 				r = Report{
 					R_class: ELF_TEXT_PADDING,
