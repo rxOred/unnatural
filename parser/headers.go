@@ -22,36 +22,3 @@ type Ehdr struct {
 	EShnum     uint16
 	EShstrndx  uint16
 }
-
-type Phdr struct {
-	PType   uint32
-	POffset uint64
-	PVaddr  uint64
-	PPaddr  uint64
-	PFilesz uint32
-	PMemsz  uint32
-	PFlags  uint32
-	PAlign  uint32
-}
-
-type Shdr struct {
-	ShName      uint32
-	ShType      uint32
-	ShFlags     uint32
-	ShAddr      uint64
-	ShOffset    uint64
-	ShSize      uint32
-	ShLink      uint32
-	ShInfo      uint32
-	ShAddralign uint32
-	ShEntsize   uint32
-}
-
-type Sym struct {
-	StName  uint32
-	StValue uint64
-	StSize  uint64
-	StInfo  byte
-	StOther byte
-	StShndx uint16
-}
