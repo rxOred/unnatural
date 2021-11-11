@@ -4,7 +4,6 @@ import (
 	"debug/elf"
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"os"
 	"strconv"
 
@@ -104,23 +103,47 @@ func (e *ElfFile) GetProgHeaders() [][]string {
 		str := make([]string, PHDR_TABLE_ENTRY_COUNT)
 		switch e.Phdr[i].PType {
 		case uint32(elf.PT_LOAD):
-			str[i] = elf.PT_LOAD.String()
+			str[0] = elf.PT_LOAD.String()
 		case uint32(elf.PT_DYNAMIC):
-			str[i] = elf.PT_DYNAMIC.String()
+			str[0] = elf.PT_DYNAMIC.String()
 		case uint32(elf.PT_INTERP):
-			str[i] = elf.PT_INTERP.String()
+			str[0] = elf.PT_INTERP.String()
+		case uint32(elf.PT_NULL):
+			str[0] = elf.PT_NULL.String()
+		case uint32(elf.PT_NOTE):
+			str[0] = elf.PT_NOTE.String()
+		case uint32(elf.PT_SHLIB):
+			str[0] = elf.PT_SHLIB.String()
+		case uint32(elf.PT_PHDR):
+			str[0] = elf.PT_PHDR.String()
+		case uint32(elf.PT_TLS):
+			str[0] = elf.PT_TLS.String()
 		default:
-			str[i] = "none"
+			str[0] = "NONE"
 		}
-		str[i] = strconv.FormatUint(e.Phdr[i].POffset, 16)
-		str[i] = strconv.FormatUint(e.Phdr[i].PVaddr, 16)
-		str[i] = strconv.FormatUint(e.Phdr[i].PPaddr, 16)
-  		str[i] = strconv.FormatUint(uint64(e.Phdr[i].PFilesz), 10)
-		str[i] = strconv.FormatUintint(uint64(e.Phdr[i].PMemsz), 10)
+		str[1] = strconv.FormatUint(e.Phdr[i].POffset, 16)
+		str[2] = strconv.FormatUint(e.Phdr[i].PVaddr, 16)
+		str[3] = strconv.FormatUint(e.Phdr[i].PPaddr, 16)
+		str[4] = strconv.FormatUint(uint64(e.Phdr[i].PFilesz), 16)
+		str[5] = strconv.FormatUint(uint64(e.Phdr[i].PMemsz), 16)
+
 		switch e.Phdr[i].PFlags {
-			case uint32(elf.)
+		case uint32(elf.PF_R):
+			str[6] = "PF_R"
+		case uint32(elf.PF_W):
+			str[6] = "PF_W"
+		case uint32(elf.PF_X):
+			str[6] = "PF_X"
+		case uint32(elf.PF_R | elf.PF_X):
+			str[6] = "PF_R | PF_X"
+		case uint32(elf.PF_R | elf.PF_W):
+			str[6] = "PF_R | PF_W"
+		case uint32(elf.PF_W | elf.PF_X):
+			str[6] = "PF_W | PF_X"
+		case uint32(elf.PF_R | elf.PF_W | elf.PF_X):
+			str[6] = "PF_R | PF_W | PF_X"
 		}
-		str[i] = strconv.FormatInt(int64(e.Phdr[i].PAlign), 10)
+		str[7] = strconv.FormatInt(int64(e.Phdr[i].PAlign), 16)
 		hdrtab = append(hdrtab, str)
 	}
 	return hdrtab
@@ -177,8 +200,6 @@ func LoadElf(e *ElfFile, pathname string) error {
 		e.Phdr = append(e.Phdr, ph)
 	}
 
-	fmt.Println("phdr", len(e.Phdr), e.ElfHeader.EPhnum)
-
 	// parsing section header table
 	for i := 0; i < int(e.ElfHeader.EShnum); i++ {
 		f.Seek(int64(e.ElfHeader.EPhoff+uint64(i*int(e.ElfHeader.EShentsize))), os.SEEK_SET)
@@ -195,6 +216,5 @@ func LoadElf(e *ElfFile, pathname string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("shstrtab :", e.shstrtab)
 	return nil
 }
