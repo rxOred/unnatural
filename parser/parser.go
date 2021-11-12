@@ -15,29 +15,27 @@ type ElfFile struct {
 	ElfHeader Ehdr    // elf header
 	Phdr      []*Phdr // program header table
 	Shdr      []*Shdr // section header table
-	symtab    []*Sym  // symbol table
-	shstrtab  []byte  // string table
+	Symtab    []*Sym  // symbol table
+	Shstrtab  []byte  // string table -- should not be accesss outside
 }
 
 // return name of a section from the index
-/*
-func (e *ElfFile) GetSectionName(index int) (string, error) {
+func (e *ElfFile) GetSectionName(index uint32) (string, error) {
 	if e.ElfHeader.EShstrndx == 0 {
-		return "fail", errors.New("shstrndx not found")
-    }
-    return &e.strtab[index], nil
-}
-*/
-
-func (e *ElfFile) ParseSectionHeaderStringTable(f *os.File, shstrndx uint16) error {
-	if shstrndx <= 0 {
-		return errors.New("Failed to find section header string table")
+		return "", errors.New("shstrndx not found")
 	}
 
-	//var b [e.Shdr[shstrndx].ShSize]byte
-	f.Seek(int64(e.Shdr[shstrndx].ShOffset), os.SEEK_SET)
-	e.shstrtab = make([]byte, e.Shdr[shstrndx].ShSize)
-	f.Read(e.shstrtab)
+	return string(e.Shstrtab[index]), nil
+}
+
+func (e *ElfFile) ParseSectionHeaderStringTable(f *os.File) error {
+	if e.ElfHeader.EShstrndx <= 0 {
+		return errors.New("Failed to find section header string table")
+	}
+	f.Seek(int64(e.Shdr[e.ElfHeader.EShstrndx].ShOffset), os.SEEK_SET)
+	e.Shstrtab = make([]byte, e.Shdr[e.ElfHeader.EShstrndx].ShSize)
+	f.Read(e.Shstrtab)
+
 	return nil
 }
 
@@ -83,18 +81,78 @@ func (e *ElfFile) GetElfHeader() []string {
 	str = append(str, "Phnum :"+strconv.FormatUint(uint64(e.ElfHeader.EPhnum), 10))
 	str = append(str, "Shnum :"+strconv.FormatUint(uint64(e.ElfHeader.EShnum), 10))
 	str = append(str, "Shstrndx :"+strconv.FormatUint(uint64(e.ElfHeader.EShstrndx), 10))
+
 	return str
 }
 
 // return section header table in an array of string arrays
-/*
-func (e *ElfFile) GetSectionHeaders() [][]string {
-	var str [][]string
-	for i := 0; i < len(e.Shdr); i++ {
-		str[i] = append(str[i], GetSectionName(e.Shdr[i].ShName))
+func (e *ElfFile) GetSectionHeaders() ([][]string, error) {
+	var hdrtab [][]string
+	for i := 0; i < int(e.ElfHeader.EShnum); i++ {
+		str := make([]string, SHDR_TABLE_ENTRY_COUNT)
+		name, err := e.GetSectionName(e.Shdr[i].ShName)
+		if err != nil {
+			return hdrtab, err
+		}
+		str[0] = name
+
+		switch e.Shdr[i].ShType {
+		case uint32(elf.SHT_NULL):
+			str[1] = elf.SHT_NULL.String()
+		case uint32(elf.SHT_PROGBITS):
+			str[1] = elf.SHT_PROGBITS.String()
+		case uint32(elf.SHT_SYMTAB):
+			str[1] = elf.SHT_SYMTAB.String()
+		case uint32(elf.SHT_STRTAB):
+			str[1] = elf.SHT_STRTAB.String()
+		case uint32(elf.SHT_RELA):
+			str[1] = elf.SHT_RELA.String()
+		case uint32(elf.SHT_REL):
+			str[1] = elf.SHT_REL.String()
+		case uint32(elf.SHT_HASH):
+			str[1] = elf.SHT_HASH.String()
+		case uint32(elf.SHT_DYNAMIC):
+			str[1] = elf.SHT_NOTE.String()
+		case uint32(elf.SHT_NOBITS):
+			str[1] = elf.SHT_NOBITS.String()
+		case uint32(elf.SHT_SHLIB):
+			str[1] = elf.SHT_DYNAMIC.String()
+		case uint32(elf.SHT_DYNSYM):
+			str[1] = elf.SHT_DYNSYM.String()
+		case uint32(elf.SHT_LOPROC):
+			str[1] = elf.SHT_LOPROC.String()
+		case uint32(elf.SHT_HIPROC):
+			str[1] = elf.SHT_HIPROC.String()
+		case uint32(elf.SHT_LOUSER):
+			str[1] = elf.SHT_LOPROC.String()
+		case uint32(elf.SHT_HIUSER):
+			str[1] = elf.SHT_HIUSER.String()
+		default:
+			str[1] = " "
+		}
+
+		switch e.Shdr[i].ShFlags {
+		case uint64(elf.SHF_ALLOC):
+			str[2] = elf.SHF_ALLOC.String()
+		case uint64(elf.SHF_WRITE):
+			str[2] = elf.SHF_WRITE.String()
+		case uint64(elf.SHF_EXECINSTR):
+			str[2] = elf.SHF_EXECINSTR.String()
+		case uint64(elf.SHF_MASKPROC):
+			str[2] = elf.SHF_MASKPROC.String()
+		}
+
+		str[3] = strconv.FormatUint(e.Shdr[i].ShAddr, 16)
+		str[4] = strconv.FormatUint(e.Shdr[i].ShOffset, 16)
+		str[5] = strconv.FormatUint(e.Shdr[i].ShSize, 16)
+		str[6] = strconv.FormatUint(uint64(e.Shdr[i].ShLink), 16)
+		str[7] = strconv.FormatUint(uint64(e.Shdr[i].ShInfo), 16)
+		str[8] = strconv.FormatUint(e.Shdr[i].ShAddralign, 16)
+		str[9] = strconv.FormatUint(e.Shdr[i].ShEntsize, 16)
 	}
+
+	return hdrtab, nil
 }
-*/
 
 // return program header table in an array of string arrays
 func (e *ElfFile) GetProgHeaders() [][]string {
@@ -146,6 +204,7 @@ func (e *ElfFile) GetProgHeaders() [][]string {
 		str[7] = strconv.FormatInt(int64(e.Phdr[i].PAlign), 16)
 		hdrtab = append(hdrtab, str)
 	}
+
 	return hdrtab
 }
 
@@ -156,6 +215,7 @@ func (e *ElfFile) GetSegmentByType(ptype uint32) (*Phdr, error) {
 			return e.Phdr[i], nil
 		}
 	}
+
 	return nil, errors.New("Segment not found")
 }
 
@@ -170,6 +230,7 @@ func (e *ElfFile) GetNSegmentByType(ptype uint32, n int) (*Phdr, error) {
 			}
 		}
 	}
+
 	return nil, errors.New("Segment not found")
 }
 
@@ -202,7 +263,7 @@ func LoadElf(e *ElfFile, pathname string) error {
 
 	// parsing section header table
 	for i := 0; i < int(e.ElfHeader.EShnum); i++ {
-		f.Seek(int64(e.ElfHeader.EPhoff+uint64(i*int(e.ElfHeader.EShentsize))), os.SEEK_SET)
+		f.Seek(int64(e.ElfHeader.EShoff+uint64(i*int(e.ElfHeader.EShentsize))), os.SEEK_SET)
 		decoder = binstruct.NewDecoder(f, binary.LittleEndian)
 		sh := new(Shdr)
 		err = decoder.Decode(sh)
@@ -212,9 +273,10 @@ func LoadElf(e *ElfFile, pathname string) error {
 		e.Shdr = append(e.Shdr, sh)
 	}
 
-	err = e.ParseSectionHeaderStringTable(f, e.ElfHeader.EShstrndx)
+	err = e.ParseSectionHeaderStringTable(f)
 	if err != nil {
 		return err
 	}
+
 	return nil
 }

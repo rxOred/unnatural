@@ -63,4 +63,7 @@ func main() {
 		}
 		fmt.Println()
 	}
+	for i := 0; i < int(e.Shdr[e.ElfHeader.EShstrndx].ShSize); i++ {
+		fmt.Print(e.Shstrtab[i])
+	}
 }
