@@ -94,13 +94,62 @@ func (e *ElfFile) GetSectionHeaders() ([][]string, error) {
 		if err != nil {
 			return hdrtab, err
 		}
+		str[0] = name
 
 		switch e.Shdr[i].ShType {
-			case 
+		case uint32(elf.SHT_NULL):
+			str[1] = elf.SHT_NULL.String()
+		case uint32(elf.SHT_PROGBITS):
+			str[1] = elf.SHT_PROGBITS.String()
+		case uint32(elf.SHT_SYMTAB):
+			str[1] = elf.SHT_SYMTAB.String()
+		case uint32(elf.SHT_STRTAB):
+			str[1] = elf.SHT_STRTAB.String()
+		case uint32(elf.SHT_RELA):
+			str[1] = elf.SHT_RELA.String()
+		case uint32(elf.SHT_REL):
+			str[1] = elf.SHT_REL.String()
+		case uint32(elf.SHT_HASH):
+			str[1] = elf.SHT_HASH.String()
+		case uint32(elf.SHT_DYNAMIC):
+			str[1] = elf.SHT_NOTE.String()
+		case uint32(elf.SHT_NOBITS):
+			str[1] = elf.SHT_NOBITS.String()
+		case uint32(elf.SHT_SHLIB):
+			str[1] = elf.SHT_DYNAMIC.String()
+		case uint32(elf.SHT_DYNSYM):
+			str[1] = elf.SHT_DYNSYM.String()
+		case uint32(elf.SHT_LOPROC):
+			str[1] = elf.SHT_LOPROC.String()
+		case uint32(elf.SHT_HIPROC):
+			str[1] = elf.SHT_HIPROC.String()
+		case uint32(elf.SHT_LOUSER):
+			str[1] = elf.SHT_LOPROC.String()
+		case uint32(elf.SHT_HIUSER):
+			str[1] = elf.SHT_HIUSER.String()
+		default:
+			str[1] = " "
 		}
-		str = append(str, name)
+
+		switch e.Shdr[i].ShFlags {
+		case uint64(elf.SHF_ALLOC):
+			str[2] = elf.SHF_ALLOC.String()
+		case uint64(elf.SHF_WRITE):
+			str[2] = elf.SHF_WRITE.String()
+		case uint64(elf.SHF_EXECINSTR):
+			str[2] = elf.SHF_EXECINSTR.String()
+		case uint64(elf.SHF_MASKPROC):
+			str[2] = elf.SHF_MASKPROC.String()
+		}
+
+		str[3] = strconv.FormatUint(e.Shdr[i].ShAddr, 16)
+		str[4] = strconv.FormatUint(e.Shdr[i].ShOffset, 16)
+		str[5] = strconv.FormatUint(e.Shdr[i].ShSize, 16)
+		str[6] = strconv.FormatUint(uint64(e.Shdr[i].ShLink), 16)
+		str[7] = strconv.FormatUint(uint64(e.Shdr[i].ShInfo), 16)
+		str[8] = strconv.FormatUint(e.Shdr[i].ShAddralign, 16)
+		str[9] = strconv.FormatUint(e.Shdr[i].ShEntsize, 16)
 	}
-    
 
 	return hdrtab, nil
 }
