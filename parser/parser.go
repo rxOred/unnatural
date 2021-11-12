@@ -4,7 +4,6 @@ import (
 	"debug/elf"
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"os"
 	"strconv"
 
@@ -21,22 +20,18 @@ type ElfFile struct {
 }
 
 // return name of a section from the index
-/*
-func (e *ElfFile) GetSectionName(index int) (string, error) {
+func (e *ElfFile) GetSectionName(index uint32) (string, error) {
 	if e.ElfHeader.EShstrndx == 0 {
-		return "fail", errors.New("shstrndx not found")
-    }
-    return &e.strtab[index], nil
+		return "", errors.New("shstrndx not found")
+	}
+
+	return string(e.Shstrtab[index]), nil
 }
-*/
 
 func (e *ElfFile) ParseSectionHeaderStringTable(f *os.File) error {
 	if e.ElfHeader.EShstrndx <= 0 {
 		return errors.New("Failed to find section header string table")
 	}
-
-	fmt.Println("offset is here ma nigga !!! ", e.Shdr[e.ElfHeader.EShstrndx].ShOffset)
-	//var b [e.Shdr[shstrndx].ShSize]byte
 	f.Seek(int64(e.Shdr[e.ElfHeader.EShstrndx].ShOffset), os.SEEK_SET)
 	e.Shstrtab = make([]byte, e.Shdr[e.ElfHeader.EShstrndx].ShSize)
 	f.Read(e.Shstrtab)
@@ -86,18 +81,29 @@ func (e *ElfFile) GetElfHeader() []string {
 	str = append(str, "Phnum :"+strconv.FormatUint(uint64(e.ElfHeader.EPhnum), 10))
 	str = append(str, "Shnum :"+strconv.FormatUint(uint64(e.ElfHeader.EShnum), 10))
 	str = append(str, "Shstrndx :"+strconv.FormatUint(uint64(e.ElfHeader.EShstrndx), 10))
+
 	return str
 }
 
 // return section header table in an array of string arrays
-/*
-func (e *ElfFile) GetSectionHeaders() [][]string {
-	var str [][]string
-	for i := 0; i < len(e.Shdr); i++ {
-		str[i] = append(str[i], GetSectionName(e.Shdr[i].ShName))
+func (e *ElfFile) GetSectionHeaders() ([][]string, error) {
+	var hdrtab [][]string
+	for i := 0; i < int(e.ElfHeader.EShnum); i++ {
+		str := make([]string, SHDR_TABLE_ENTRY_COUNT)
+		name, err := e.GetSectionName(e.Shdr[i].ShName)
+		if err != nil {
+			return hdrtab, err
+		}
+
+		switch e.Shdr[i].ShType {
+			case 
+		}
+		str = append(str, name)
 	}
+    
+
+	return hdrtab, nil
 }
-*/
 
 // return program header table in an array of string arrays
 func (e *ElfFile) GetProgHeaders() [][]string {
@@ -149,6 +155,7 @@ func (e *ElfFile) GetProgHeaders() [][]string {
 		str[7] = strconv.FormatInt(int64(e.Phdr[i].PAlign), 16)
 		hdrtab = append(hdrtab, str)
 	}
+
 	return hdrtab
 }
 
@@ -159,6 +166,7 @@ func (e *ElfFile) GetSegmentByType(ptype uint32) (*Phdr, error) {
 			return e.Phdr[i], nil
 		}
 	}
+
 	return nil, errors.New("Segment not found")
 }
 
@@ -173,6 +181,7 @@ func (e *ElfFile) GetNSegmentByType(ptype uint32, n int) (*Phdr, error) {
 			}
 		}
 	}
+
 	return nil, errors.New("Segment not found")
 }
 
