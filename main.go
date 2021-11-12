@@ -55,12 +55,17 @@ func main() {
 		fmt.Println(str[i])
 	}
 
-	str2 := e.GetProgHeaders()
+	/*
+		str2 := e.GetProgHeaders()
 
-	for i := 0; i < int(e.ElfHeader.EPhnum); i++ {
-		for j := 0; j < 8; j++ {
-			fmt.Print(str2[i][j], "\t")
+		for i := 0; i < int(e.ElfHeader.EPhnum); i++ {
+			for j := 0; j < 8; j++ {
+				fmt.Print(str2[i][j], "\t")
+			}
+			fmt.Println()
 		}
-		fmt.Println()
-	}
+		for i := 0; i < int(e.Shdr[e.ElfHeader.EShstrndx].ShSize); i++ {
+			fmt.Print(e.Shstrtab[i])
+		}
+	*/
 }

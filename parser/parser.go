@@ -4,6 +4,7 @@ import (
 	"debug/elf"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"os"
 	"strconv"
 
@@ -15,8 +16,8 @@ type ElfFile struct {
 	ElfHeader Ehdr    // elf header
 	Phdr      []*Phdr // program header table
 	Shdr      []*Shdr // section header table
-	symtab    []*Sym  // symbol table
-	shstrtab  []byte  // string table
+	Symtab    []*Sym  // symbol table
+	Shstrtab  []byte  // string table -- should not be accesss outside
 }
 
 // return name of a section from the index
@@ -29,15 +30,17 @@ func (e *ElfFile) GetSectionName(index int) (string, error) {
 }
 */
 
-func (e *ElfFile) ParseSectionHeaderStringTable(f *os.File, shstrndx uint16) error {
-	if shstrndx <= 0 {
+func (e *ElfFile) ParseSectionHeaderStringTable(f *os.File) error {
+	if e.ElfHeader.EShstrndx <= 0 {
 		return errors.New("Failed to find section header string table")
 	}
 
+	fmt.Println("offset is here ma nigga !!! ", e.Shdr[e.ElfHeader.EShstrndx].ShOffset)
 	//var b [e.Shdr[shstrndx].ShSize]byte
-	f.Seek(int64(e.Shdr[shstrndx].ShOffset), os.SEEK_SET)
-	e.shstrtab = make([]byte, e.Shdr[shstrndx].ShSize)
-	f.Read(e.shstrtab)
+	f.Seek(int64(e.Shdr[e.ElfHeader.EShstrndx].ShOffset), os.SEEK_SET)
+	e.Shstrtab = make([]byte, e.Shdr[e.ElfHeader.EShstrndx].ShSize)
+	f.Read(e.Shstrtab)
+
 	return nil
 }
 
@@ -202,7 +205,7 @@ func LoadElf(e *ElfFile, pathname string) error {
 
 	// parsing section header table
 	for i := 0; i < int(e.ElfHeader.EShnum); i++ {
-		f.Seek(int64(e.ElfHeader.EPhoff+uint64(i*int(e.ElfHeader.EShentsize))), os.SEEK_SET)
+		f.Seek(int64(e.ElfHeader.EShoff+uint64(i*int(e.ElfHeader.EShentsize))), os.SEEK_SET)
 		decoder = binstruct.NewDecoder(f, binary.LittleEndian)
 		sh := new(Shdr)
 		err = decoder.Decode(sh)
@@ -212,9 +215,10 @@ func LoadElf(e *ElfFile, pathname string) error {
 		e.Shdr = append(e.Shdr, sh)
 	}
 
-	err = e.ParseSectionHeaderStringTable(f, e.ElfHeader.EShstrndx)
+	err = e.ParseSectionHeaderStringTable(f)
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
