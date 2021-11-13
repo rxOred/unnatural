@@ -149,6 +149,8 @@ func (e *ElfFile) GetSectionHeaders() ([][]string, error) {
 		str[7] = strconv.FormatUint(uint64(e.Shdr[i].ShInfo), 16)
 		str[8] = strconv.FormatUint(e.Shdr[i].ShAddralign, 16)
 		str[9] = strconv.FormatUint(e.Shdr[i].ShEntsize, 16)
+
+		hdrtab = append(hdrtab, str)
 	}
 
 	return hdrtab, nil

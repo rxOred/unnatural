@@ -72,7 +72,7 @@ func main() {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
-	for i := 0; i < int(e.ElfHeader.EPhnum); i++ {
+	for i := 0; i < int(e.ElfHeader.EShnum); i++ {
 		for j := 0; j < parser.SHDR_TABLE_ENTRY_COUNT; j++ {
 			fmt.Print(str3[i][j], "\t")
 		}
