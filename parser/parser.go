@@ -273,15 +273,25 @@ func (e *ElfFile) ParseSymbolTable() error {
 			type_index = i
 		}
 	}
-
 	name_index, err := e.GetSectionIndexByName(".symtab")
 	if err != nil {
 
 	}
-
 	if name_index != type_index {
 		// indexes for symtab does not match, which means we are fucked
+		return errors.New("Could not find section")
 	}
+	for i := 0; i < (int(e.Shdr[type_index].ShSize) / int(e.Shdr[type_index].ShEntsize)); i++ {
+		e.File.Seek(int64(e.Shdr[type_index].ShOffset), os.SEEK_SET)
+		decoder := binstruct.NewDecoder(e.File, binary.LittleEndian)
+		symtab := new(Sym)
+		err = decoder.Decode(symtab)
+		if err != nil {
+			return err
+		}
+		e.Symtab = append(e.Symtab, symtab)
+	}
+	return nil
 }
 
 // load the elf, parse main header tables
