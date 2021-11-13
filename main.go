@@ -64,6 +64,18 @@ func main() {
 		fmt.Println()
 	}
 	for i := 0; i < int(e.Shdr[e.ElfHeader.EShstrndx].ShSize); i++ {
-		fmt.Print(e.Shstrtab[i])
+		fmt.Print(string(e.Shstrtab[i]))
+	}
+
+	str3, err := e.GetSectionHeaders()
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+	for i := 0; i < int(e.ElfHeader.EPhnum); i++ {
+		for j := 0; j < parser.SHDR_TABLE_ENTRY_COUNT; j++ {
+			fmt.Print(str3[i][j], "\t")
+		}
+		fmt.Println()
 	}
 }
