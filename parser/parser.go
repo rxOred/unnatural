@@ -11,30 +11,50 @@ import (
 )
 
 type ElfFile struct {
-	pathname  string  // pathname
-	ElfHeader Ehdr    // elf header
-	Phdr      []*Phdr // program header table
-	Shdr      []*Shdr // section header table
-	Symtab    []*Sym  // symbol table
-	Shstrtab  []byte  // string table -- should not be accesss outside
+	File      *os.File // file
+	ElfHeader Ehdr     // elf header
+	Phdr      []*Phdr  // program header table
+	Shdr      []*Shdr  // section header table
+	Symtab    []*Sym   // symbol table
+	Strtab    []byte   // string table
+	shstrtab  []byte   // section header string table. pretty much useless for user of this module
 }
 
 // return name of a section from the index
-func (e *ElfFile) GetSectionName(index uint32) (string, error) {
+func (e *ElfFile) GetSectionNameByIndex(index uint32) (string, error) {
 	if e.ElfHeader.EShstrndx == 0 {
 		return "", errors.New("shstrndx not found")
 	}
 
-	return string(e.Shstrtab[index]), nil
+	if uint32(e.Shdr[e.ElfHeader.EShstrndx].ShSize) < index {
+		return "", errors.New("index out of range")
+	}
+
+	return string(e.shstrtab[index]), nil
 }
 
-func (e *ElfFile) ParseSectionHeaderStringTable(f *os.File) error {
+func (e *ElfFile) GetSectionIndexByName(name string) (int, error) {
+	for i := 0; i < int(e.ElfHeader.EShnum); i++ {
+		str, err := e.GetSectionNameByIndex(e.Shdr[i].ShName)
+		if err != nil {
+			return -1, err
+		}
+		if str == name {
+			return i, nil
+		}
+	}
+
+	return -1, nil
+}
+
+// parse section header string table if it exists
+func (e *ElfFile) ParseSectionHeaderStringTable() error {
 	if e.ElfHeader.EShstrndx <= 0 {
 		return errors.New("Failed to find section header string table")
 	}
-	f.Seek(int64(e.Shdr[e.ElfHeader.EShstrndx].ShOffset), os.SEEK_SET)
-	e.Shstrtab = make([]byte, e.Shdr[e.ElfHeader.EShstrndx].ShSize)
-	f.Read(e.Shstrtab)
+	e.File.Seek(int64(e.Shdr[e.ElfHeader.EShstrndx].ShOffset), os.SEEK_SET)
+	e.shstrtab = make([]byte, e.Shdr[e.ElfHeader.EShstrndx].ShSize)
+	e.File.Read(e.shstrtab)
 
 	return nil
 }
@@ -44,43 +64,43 @@ func (e *ElfFile) GetElfHeader() []string {
 	var str []string
 	switch e.ElfHeader.EType {
 	case uint16(elf.ET_REL):
-		str = append(str, "Type :"+elf.ET_REL.String())
+		str = append(str, elf.ET_REL.String())
 	case uint16(elf.ET_EXEC):
-		str = append(str, "Type :"+elf.ET_EXEC.String())
+		str = append(str, elf.ET_EXEC.String())
 	case uint16(elf.ET_DYN):
-		str = append(str, "Type :"+elf.ET_DYN.String())
+		str = append(str, elf.ET_DYN.String())
 	case uint16(elf.ET_CORE):
-		str = append(str, "Type :"+elf.ET_CORE.String())
+		str = append(str, elf.ET_CORE.String())
 	default:
-		str = append(str, "Type :"+"none")
+		str = append(str, "NONE")
 	}
 
 	switch e.ElfHeader.EMachine {
 	case uint16(elf.EM_386):
-		str = append(str, "Machine :"+elf.EM_386.String())
+		str = append(str, elf.EM_386.String())
 	case uint16(elf.EM_MIPS):
-		str = append(str, "Machine :"+elf.EM_MIPS.String())
+		str = append(str, elf.EM_MIPS.String())
 	case uint16(elf.EM_ARM):
-		str = append(str, "Machine :"+elf.EM_ARM.String())
+		str = append(str, elf.EM_ARM.String())
 	case uint16(elf.EM_X86_64):
-		str = append(str, "Machine :"+elf.EM_X86_64.String())
+		str = append(str, elf.EM_X86_64.String())
 	default:
-		str = append(str, "Machine :"+"none")
+		str = append(str, "NONE")
 	}
 
 	switch e.ElfHeader.EVersion {
 	case uint32(elf.EV_CURRENT):
-		str = append(str, "Version :"+elf.EV_CURRENT.String())
+		str = append(str, elf.EV_CURRENT.String())
 	default:
-		str = append(str, "Version :"+elf.EV_NONE.String())
+		str = append(str, elf.EV_NONE.String())
 	}
 
-	str = append(str, "Entry :"+strconv.FormatUint(e.ElfHeader.EEntry, 16))
-	str = append(str, "Phoff :"+strconv.FormatUint(e.ElfHeader.EPhoff, 16))
-	str = append(str, "Shoff :"+strconv.FormatUint(e.ElfHeader.EShoff, 16))
-	str = append(str, "Phnum :"+strconv.FormatUint(uint64(e.ElfHeader.EPhnum), 10))
-	str = append(str, "Shnum :"+strconv.FormatUint(uint64(e.ElfHeader.EShnum), 10))
-	str = append(str, "Shstrndx :"+strconv.FormatUint(uint64(e.ElfHeader.EShstrndx), 10))
+	str = append(str, strconv.FormatUint(e.ElfHeader.EEntry, 16))
+	str = append(str, strconv.FormatUint(e.ElfHeader.EPhoff, 16))
+	str = append(str, strconv.FormatUint(e.ElfHeader.EShoff, 16))
+	str = append(str, strconv.FormatUint(uint64(e.ElfHeader.EPhnum), 10))
+	str = append(str, strconv.FormatUint(uint64(e.ElfHeader.EShnum), 10))
+	str = append(str, strconv.FormatUint(uint64(e.ElfHeader.EShstrndx), 10))
 
 	return str
 }
@@ -88,11 +108,19 @@ func (e *ElfFile) GetElfHeader() []string {
 // return section header table in an array of string arrays
 func (e *ElfFile) GetSectionHeaders() ([][]string, error) {
 	var hdrtab [][]string
+
+	// parsing section names
+	err := e.ParseSectionHeaderStringTable()
+	if err != nil {
+
+	}
+
 	for i := 0; i < int(e.ElfHeader.EShnum); i++ {
 		str := make([]string, SHDR_TABLE_ENTRY_COUNT)
-		name, err := e.GetSectionName(e.Shdr[i].ShName)
+		name, err := e.GetSectionNameByIndex(e.Shdr[i].ShName)
+		// if we could not
 		if err != nil {
-			return hdrtab, err
+			str[0] = strconv.FormatUint(uint64(e.Shdr[i].ShName), 10)
 		}
 		str[0] = name
 
@@ -128,7 +156,7 @@ func (e *ElfFile) GetSectionHeaders() ([][]string, error) {
 		case uint32(elf.SHT_HIUSER):
 			str[1] = elf.SHT_HIUSER.String()
 		default:
-			str[1] = " "
+			str[1] = "NONE"
 		}
 
 		switch e.Shdr[i].ShFlags {
@@ -140,6 +168,8 @@ func (e *ElfFile) GetSectionHeaders() ([][]string, error) {
 			str[2] = elf.SHF_EXECINSTR.String()
 		case uint64(elf.SHF_MASKPROC):
 			str[2] = elf.SHF_MASKPROC.String()
+		default:
+			str[2] = "NONE"
 		}
 
 		str[3] = strconv.FormatUint(e.Shdr[i].ShAddr, 16)
@@ -236,16 +266,34 @@ func (e *ElfFile) GetNSegmentByType(ptype uint32, n int) (*Phdr, error) {
 	return nil, errors.New("Segment not found")
 }
 
-// parse the whole elf binary
+func (e *ElfFile) ParseSymbolTable() error {
+	var type_index, name_index int
+	for i := 0; i < int(e.ElfHeader.EShnum); i++ {
+		if e.Shdr[i].ShType == uint32(elf.SHT_SYMTAB) {
+			type_index = i
+		}
+	}
+
+	name_index, err := e.GetSectionIndexByName(".symtab")
+	if err != nil {
+
+	}
+
+	if name_index != type_index {
+		// indexes for symtab does not match, which means we are fucked
+	}
+}
+
+// load the elf, parse main header tables
 func LoadElf(e *ElfFile, pathname string) error {
-	e.pathname = pathname
 	f, err := openFile(pathname)
 	if err != nil {
 		return err
 	}
+	e.File = f
 
 	// parsing elf header
-	decoder := binstruct.NewDecoder(f, binary.LittleEndian)
+	decoder := binstruct.NewDecoder(e.File, binary.LittleEndian)
 	err = decoder.Decode(&e.ElfHeader)
 	if err != nil {
 		return err
@@ -253,8 +301,8 @@ func LoadElf(e *ElfFile, pathname string) error {
 
 	// parsing program header table
 	for i := 0; i < int(e.ElfHeader.EPhnum); i++ {
-		f.Seek(int64(e.ElfHeader.EPhoff+uint64(i*int(e.ElfHeader.EPhentsize))), os.SEEK_SET)
-		decoder = binstruct.NewDecoder(f, binary.LittleEndian)
+		e.File.Seek(int64(e.ElfHeader.EPhoff+uint64(i*int(e.ElfHeader.EPhentsize))), os.SEEK_SET)
+		decoder = binstruct.NewDecoder(e.File, binary.LittleEndian)
 		ph := new(Phdr)
 		err = decoder.Decode(ph)
 		if err != nil {
@@ -265,8 +313,8 @@ func LoadElf(e *ElfFile, pathname string) error {
 
 	// parsing section header table
 	for i := 0; i < int(e.ElfHeader.EShnum); i++ {
-		f.Seek(int64(e.ElfHeader.EShoff+uint64(i*int(e.ElfHeader.EShentsize))), os.SEEK_SET)
-		decoder = binstruct.NewDecoder(f, binary.LittleEndian)
+		e.File.Seek(int64(e.ElfHeader.EShoff+uint64(i*int(e.ElfHeader.EShentsize))), os.SEEK_SET)
+		decoder = binstruct.NewDecoder(e.File, binary.LittleEndian)
 		sh := new(Shdr)
 		err = decoder.Decode(sh)
 		if err != nil {
@@ -275,10 +323,9 @@ func LoadElf(e *ElfFile, pathname string) error {
 		e.Shdr = append(e.Shdr, sh)
 	}
 
-	err = e.ParseSectionHeaderStringTable(f)
-	if err != nil {
-		return err
-	}
-
 	return nil
+}
+
+func (e *ElfFile) UnloadFile() {
+	e.File.Close()
 }
