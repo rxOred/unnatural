@@ -20,6 +20,14 @@ type ElfFile struct {
 	shstrtab  []byte   // section header string table. pretty much useless for user of this module
 }
 
+func (e *ElfFile) GetSectionNames() ([]string, error) {
+	var str []string
+	for i := 0; i < int(e.ElfHeader.EShnum); i++ {
+		str = append(str, s)
+	}
+	return str, nil
+}
+
 // return name of a section from the index
 func (e *ElfFile) GetSectionNameByIndex(index uint32) (string, error) {
 	if e.ElfHeader.EShstrndx == 0 {
@@ -45,18 +53,6 @@ func (e *ElfFile) GetSectionIndexByName(name string) (int, error) {
 	}
 
 	return -1, nil
-}
-
-// parse section header string table if it exists
-func (e *ElfFile) ParseSectionHeaderStringTable() error {
-	if e.ElfHeader.EShstrndx <= 0 {
-		return errors.New("Failed to find section header string table")
-	}
-	e.File.Seek(int64(e.Shdr[e.ElfHeader.EShstrndx].ShOffset), os.SEEK_SET)
-	e.shstrtab = make([]byte, e.Shdr[e.ElfHeader.EShstrndx].ShSize)
-	e.File.Read(e.shstrtab)
-
-	return nil
 }
 
 // return elf header in a string array
@@ -266,21 +262,18 @@ func (e *ElfFile) GetNSegmentByType(ptype uint32, n int) (*Phdr, error) {
 	return nil, errors.New("Segment not found")
 }
 
-func (e *ElfFile) ParseSymbolTable() error {
-	var type_index, name_index int
-	for i := 0; i < int(e.ElfHeader.EShnum); i++ {
-		if e.Shdr[i].ShType == uint32(elf.SHT_SYMTAB) {
-			type_index = i
-		}
-	}
-	name_index, err := e.GetSectionIndexByName(".symtab")
-	if err != nil {
+// parse dynamic string table, dynamic symbol table, dynamic section
+func (e *ElfFile) ParseDynamicSections() error {
 
-	}
-	if name_index != type_index {
-		// indexes for symtab does not match, which means we are fucked
-		return errors.New("Could not find section")
-	}
+}
+
+// parse symbol table
+func (e *ElfFile) ParseStringTable() error {
+
+}
+
+// parse symbol table - wait why the hell am i commenting these stuff?
+func (e *ElfFile) ParseSymbolTable() error {
 	for i := 0; i < (int(e.Shdr[type_index].ShSize) / int(e.Shdr[type_index].ShEntsize)); i++ {
 		e.File.Seek(int64(e.Shdr[type_index].ShOffset), os.SEEK_SET)
 		decoder := binstruct.NewDecoder(e.File, binary.LittleEndian)
@@ -291,6 +284,18 @@ func (e *ElfFile) ParseSymbolTable() error {
 		}
 		e.Symtab = append(e.Symtab, symtab)
 	}
+	return nil
+}
+
+// parse section header string table if it exists
+func (e *ElfFile) parseSectionHeaderStringTable() error {
+	if e.ElfHeader.EShstrndx <= 0 {
+		return errors.New("Failed to find section header string table")
+	}
+	e.File.Seek(int64(e.Shdr[e.ElfHeader.EShstrndx].ShOffset), os.SEEK_SET)
+	e.shstrtab = make([]byte, e.Shdr[e.ElfHeader.EShstrndx].ShSize)
+	e.File.Read(e.shstrtab)
+
 	return nil
 }
 
@@ -331,6 +336,26 @@ func LoadElf(e *ElfFile, pathname string) error {
 			return err
 		}
 		e.Shdr = append(e.Shdr, sh)
+	}
+
+	// if section header string table exists, parse it
+	if e.ElfHeader.EShstrndx > 0 {
+		e.parseSectionHeaderStringTable()
+	}
+
+	var type_index, name_index int
+	for i := 0; i < int(e.ElfHeader.EShnum); i++ {
+		if e.Shdr[i].ShType == uint32(elf.SHT_SYMTAB) {
+			type_index = i
+		}
+	}
+	name_index, err = e.GetSectionIndexByName(".symtab")
+	if err != nil {
+
+	}
+	if name_index != type_index {
+		// indexes for symtab does not match, which means we are fucked
+		return errors.New("Could not find section")
 	}
 
 	return nil

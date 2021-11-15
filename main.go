@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 
+	ui "github.com/gizak/termui/v3"
 	parser "github.com/rxOred/unnatural/parser"
 	view "github.com/rxOred/unnatural/view"
 )
