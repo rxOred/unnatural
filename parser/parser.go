@@ -22,7 +22,7 @@ type ElfFile struct {
 func (e *ElfFile) GetSectionNames() ([]string, error) {
 	var str []string
 	for i := 0; i < int(e.ElfHeader.EShnum); i++ {
-		str = append(str, s)
+		//str = append(str, s)
 	}
 	return str, nil
 }
