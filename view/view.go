@@ -139,6 +139,7 @@ func (av *AnalysisView) SetupAnalysisGrid() error {
 
 	termwidth, termheight := ui.TerminalDimensions()
 	av.a_grid.SetRect(0, 0, termwidth, termheight-1)
+	
 	return nil
 }
 
@@ -156,6 +157,7 @@ func (av *AnalysisView) StartAnalysis() error {
 	}
 	increasePercent(3, av.a_guage)
 	ui.Render(av.a_grid)
+	
 	return nil
 }
 

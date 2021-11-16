@@ -4,6 +4,13 @@ import (
 	"os"
 )
 
+func readFile(f *os.File, offset int64, size uint32) []byte {
+	f.Seek(offset, os.SEEK_SET)
+	buffer := make([]byte, size)
+	f.Read(buffer)
+	return buffer
+}
+
 func openFile(pathname string) (*os.File, error) {
 	f, err := os.OpenFile(pathname, os.O_RDWR, 0666)
 	if err != nil {
