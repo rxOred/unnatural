@@ -10,3 +10,6 @@ goals:
 
 ToDo:
 - Detect Reverse text padding infections
+
+Note:
+- currently broken, cause im writing a parser from scratch since it is hard to work with debug/elf
