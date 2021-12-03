@@ -7,7 +7,6 @@ import (
 	"os"
 
 	ui "github.com/gizak/termui/v3"
-	parser "github.com/rxOred/unnatural/parser"
 	view "github.com/rxOred/unnatural/view"
 )
 
@@ -50,6 +49,4 @@ func main() {
 
 	// Show Analysis view to the user
 	view.ShowAnalysisView(&av, &ev)
-	var e parser.ElfFile
-	parser.LoadElf(&e, *binpathFlag)
 }
