@@ -139,7 +139,7 @@ func (av *AnalysisView) SetupAnalysisGrid() error {
 
 	termwidth, termheight := ui.TerminalDimensions()
 	av.a_grid.SetRect(0, 0, termwidth, termheight-1)
-	
+
 	return nil
 }
 
@@ -157,7 +157,7 @@ func (av *AnalysisView) StartAnalysis() error {
 	}
 	increasePercent(3, av.a_guage)
 	ui.Render(av.a_grid)
-	
+
 	return nil
 }
 
@@ -198,17 +198,22 @@ func InitAnalysisWidgets(av *AnalysisView, ev *ErrorView, pathname string) {
 	if err != nil {
 		ShowErrorView(ev, err.Error())
 	}
+
+	// load & parse elf binary
 	if err = parser.LoadElf(&av.a_elf, pathname); err != nil {
 		ShowErrorView(ev, err.Error())
 	}
 
 	increasePercent(10, av.a_guage)
 
-	av.a_symbol_list.Rows = av.a_elf.GetSectionNames()
-	av.a_elf_header_list.Rows = // header
-	av.a_section_list.Rows = // sections
+	av.a_elf_header_list.Rows = av.a_elf.GetElfHeader()
+	av.a_section_list.Rows, err = av.a_elf.GetSectionNames()
+	if err != nil {
+		av.a_section_list.Rows = append(av.a_section_list.Rows, "")
+	}
+	av.a_symbol_list.Rows =
 
-	increasePercent(10, av.a_guage)
+		increasePercent(10, av.a_guage)
 }
 
 // clear screen, render the UI, start eventloop
