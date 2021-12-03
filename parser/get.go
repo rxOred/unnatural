@@ -2,8 +2,80 @@ package parser
 
 import (
 	"debug/elf"
+	"errors"
 	"strconv"
 )
+
+func (e *ElfFile) GetSymbolTable() ([]string, error) {
+	return nil, nil
+}
+
+func (e *ElfFile) GetSectionNames() ([]string, error) {
+	var str []string
+	for i := 0; i < int(e.ElfHeader.EShnum); i++ {
+		name, err := e.GetSectionNameByIndex(e.Shdr[i].ShName)
+		if err != nil {
+			str = append(str, "")
+		}
+		str = append(str, name)
+	}
+	return str, nil
+}
+
+func (e *ElfFile) getSectionName(index uint32) string {
+	return string(e.shstrtab[index])
+}
+
+func (e *ElfFile) GetSectionNameByIndex(index uint32) (string, error) {
+	if e.ElfHeader.EShstrndx <= 0 {
+		return "", errors.New("shstrndx not found")
+	}
+
+	if uint32(e.Shdr[e.ElfHeader.EShstrndx].ShSize) < index {
+		return "", errors.New("index out of range")
+	}
+
+	return e.getSectionName(index), nil
+}
+
+func (e *ElfFile) GetSectionIndexByName(name string) (int, error) {
+	if e.ElfHeader.EShstrndx <= 0 {
+		return -1, errors.New("shstrndx not found")
+	}
+
+	for i := 0; i < int(e.ElfHeader.EShnum); i++ {
+		str := e.getSectionName(e.Shdr[i].ShName)
+		if str == name {
+			return i, nil
+		}
+	}
+
+	return -1, nil
+}
+
+func (e *ElfFile) GetSegmentByType(ptype uint32) (*Phdr, error) {
+	for i := 0; i < int(e.ElfHeader.EPhnum); i++ {
+		if e.Phdr[i].PType == ptype {
+			return e.Phdr[i], nil
+		}
+	}
+
+	return nil, errors.New("Segment not found")
+}
+
+func (e *ElfFile) GetNSegmentByType(ptype uint32, n int) (*Phdr, error) {
+	k := 0
+	for i := 0; i < int(e.ElfHeader.EPhnum); i++ {
+		if e.Phdr[i].PType == ptype {
+			k++
+			if k == n {
+				return e.Phdr[i], nil
+			}
+		}
+	}
+
+	return nil, errors.New("Segment not found")
+}
 
 func (e *ElfFile) GetElfHeader() []string {
 	var str []string
