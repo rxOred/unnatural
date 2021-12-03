@@ -207,13 +207,10 @@ func InitAnalysisWidgets(av *AnalysisView, ev *ErrorView, pathname string) {
 	increasePercent(10, av.a_guage)
 
 	av.a_elf_header_list.Rows = av.a_elf.GetElfHeader()
-	av.a_section_list.Rows, err = av.a_elf.GetSectionNames()
-	if err != nil {
-		av.a_section_list.Rows = append(av.a_section_list.Rows, "")
-	}
-	av.a_symbol_list.Rows =
+	av.a_section_list.Rows = av.a_elf.GetSectionNames()
+	av.a_symbol_list.Rows = av.a_elf.GetSymbolNames()
 
-		increasePercent(10, av.a_guage)
+	increasePercent(10, av.a_guage)
 }
 
 // clear screen, render the UI, start eventloop
