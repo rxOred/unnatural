@@ -2,12 +2,9 @@ package view
 
 import (
 	"fmt"
-	"strconv"
 
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
-	"github.com/rxOred/unnatural/analyser"
-	disinfect "github.com/rxOred/unnatural/disinfect"
 	parser "github.com/rxOred/unnatural/parser"
 )
 
@@ -143,6 +140,7 @@ func (av *AnalysisView) SetupAnalysisGrid() error {
 	return nil
 }
 
+/*
 func (av *AnalysisView) StartAnalysis() error {
 	increasePercent(3, av.a_guage)
 	av.a_guage.Title = "Analysing"
@@ -181,6 +179,7 @@ func (av *AnalysisView) StartDisInfection() error {
 	disinfect.SaveFile(av.a_elf)
 	return nil
 }
+*/
 
 func InitAnalysisWidgets(av *AnalysisView, ev *ErrorView, pathname string) {
 	text := fmt.Sprintf("\t\tunnatural - Elf anomaly detector and disinfector\t\t\nTarget: %s", pathname)
@@ -204,6 +203,7 @@ func InitAnalysisWidgets(av *AnalysisView, ev *ErrorView, pathname string) {
 		ShowErrorView(ev, err.Error())
 	}
 
+	// use a channel and threads to manage these
 	increasePercent(10, av.a_guage)
 
 	av.a_elf_header_list.Rows = av.a_elf.GetElfHeader()

@@ -13,7 +13,7 @@ func (av *AnalysisView) Eventloop(ev *ErrorView) {
 	signal.Notify(sig_term, os.Interrupt, syscall.SIGTERM)
 
 	var highlight int8 = 0
-	done := false
+	//done := false uncomment this
 
 	prevkey := ""
 
@@ -24,20 +24,21 @@ func (av *AnalysisView) Eventloop(ev *ErrorView) {
 				ui.Clear()
 				os.Exit(1)
 
-			case "<C-s>":
-				if err := av.StartAnalysis(); err != nil {
-					ShowErrorView(ev, err.Error())
-				}
-				done = true
+				/*
+					case "<C-s>":
+						if err := av.StartAnalysis(); err != nil {
+							ShowErrorView(ev, err.Error())
+						}
+						done = true
 
-			case "<C-d>":
-				// dis infect
-				if done {
-					if err := av.StartDisInfection(); err != nil {
-						ShowErrorView(ev, err.Error())
-					}
-				}
-
+					case "<C-d>":
+						// dis infect
+						if done {
+							if err := av.StartDisInfection(); err != nil {
+								ShowErrorView(ev, err.Error())
+							}
+						}
+				*/
 			case "<Left>":
 				highlight--
 				if highlight == -1 {
