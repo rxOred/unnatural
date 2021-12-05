@@ -3,10 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
 
-	ui "github.com/gizak/termui/v3"
+	"github.com/rxOred/unnatural/parser"
 	view "github.com/rxOred/unnatural/view"
 )
 
@@ -38,15 +37,24 @@ func init() {
 }
 
 func main() {
-	if err := ui.Init(); err != nil {
-		log.Fatal(err)
+	/*
+		if err := ui.Init(); err != nil {
+			log.Fatal(err)
+		}
+		defer ui.Close()
+
+		// initialize TUIs
+		view.InitErrorView(&ev)
+		view.InitAnalysisWidgets(&av, &ev, *binpathFlag)
+
+		// Show Analysis view to the user
+		view.ShowAnalysisView(&av, &ev)
+	*/
+	var e parser.ElfFile
+	parser.LoadElf(&e, *binpathFlag)
+	varia := e.GetSymbolNames()
+	for i := 0; i < len(varia); i++ {
+		fmt.Println(varia[i])
 	}
-	defer ui.Close()
-
-	// initialize TUIs
-	view.InitErrorView(&ev)
-	view.InitAnalysisWidgets(&av, &ev, *binpathFlag)
-
-	// Show Analysis view to the user
-	view.ShowAnalysisView(&av, &ev)
+	fmt.Println(len(e.Symtab))
 }
