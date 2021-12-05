@@ -3,7 +3,6 @@ package parser
 import (
 	"debug/elf"
 	"errors"
-	"fmt"
 	"strconv"
 )
 
@@ -12,7 +11,6 @@ func (e *ElfFile) GetSymbolByNameByIndex(index uint32) (string, error) {
 }
 
 func (e *ElfFile) GetSymbolNames() []string {
-	fmt.Println("length ", len(e.Symtab))
 	var str []string
 	for i := 0; i < len(e.Symtab); i++ {
 		name, err := e.GetSymbolByNameByIndex(e.Symtab[i].StName)
