@@ -3,23 +3,40 @@ package parser
 import (
 	"debug/elf"
 	"errors"
+	"log"
 	"strconv"
 )
 
-func (e *ElfFile) GetSymbolByNameByIndex(index uint32) (string, error) {
-	return "", nil
+func (e *ElfFile) GetSymbolNameByIndex(index uint32) (string, error) {
+	log.Println("[log]", string(e.Strtab[index]))
+	return string(e.Strtab[index]), nil
 }
 
 func (e *ElfFile) GetSymbolNames() []string {
 	var str []string
-	for i := 0; i < len(e.Symtab); i++ {
-		name, err := e.GetSymbolByNameByIndex(e.Symtab[i].StName)
+	noOfSyms := e.GetNumberOfSymbols()
+	if noOfSyms < 0 {
+		return nil
+	}
+	//log.Println(noOfSyms)
+	for i := 0; i < noOfSyms; i++ {
+		name, err := e.GetSymbolNameByIndex(e.Symtab[i].StName)
 		str = append(str, name)
 		if err != nil {
 			continue
 		}
 	}
 	return str
+}
+
+func (e *ElfFile) GetNumberOfSymbols() int {
+	for i := 0; i < int(e.ElfHeader.EShnum); i++ {
+		if e.Shdr[i].ShType == uint32(elf.SHT_SYMTAB) {
+			return int(e.Shdr[i].ShSize) / int(e.Shdr[i].ShEntsize)
+
+		}
+	}
+	return -1
 }
 
 func (e *ElfFile) GetSectionNames() []string {

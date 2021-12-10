@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/rxOred/unnatural/parser"
@@ -52,9 +53,13 @@ func main() {
 	*/
 	var e parser.ElfFile
 	parser.LoadElf(&e, *binpathFlag)
-	varia := e.GetSymbolNames()
-	for i := 0; i < len(varia); i++ {
-		fmt.Println(varia[i])
+	symnames := e.GetSymbolNames()
+	if symnames != nil {
+		for i := 0; i < e.GetNumberOfSymbols(); i++ {
+			//log.Println(symnames[i])
+		}
 	}
-	fmt.Println(len(e.Symtab))
+	// convert gostirng to cstring
+	log.Println("debug::string table ::: \n ", string(e.Strtab))
+	log.Println("debug::string table ::: \n ", e.Strtab)
 }
