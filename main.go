@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/rxOred/unnatural/parser"
+	ui "github.com/gizak/termui/v3"
 	view "github.com/rxOred/unnatural/view"
 )
 
@@ -38,28 +38,26 @@ func init() {
 }
 
 func main() {
-	/*
-		if err := ui.Init(); err != nil {
-			log.Fatal(err)
-		}
-		defer ui.Close()
-
-		// initialize TUIs
-		view.InitErrorView(&ev)
-		view.InitAnalysisWidgets(&av, &ev, *binpathFlag)
-
-		// Show Analysis view to the user
-		view.ShowAnalysisView(&av, &ev)
-	*/
-	var e parser.ElfFile
-	parser.LoadElf(&e, *binpathFlag)
-	symnames := e.GetSymbolNames()
-	if symnames != nil {
-		for i := 0; i < e.GetNumberOfSymbols(); i++ {
-			//log.Println(symnames[i])
-		}
+	if err := ui.Init(); err != nil {
+		log.Fatal(err)
 	}
+	defer ui.Close()
+
+	// initialize TUIs
+	view.InitErrorView(&ev)
+	view.InitAnalysisWidgets(&av, &ev, *binpathFlag)
+
+	// Show Analysis view to the user
+	view.ShowAnalysisView(&av, &ev)
+	/*
+		var e parser.ElfFile
+		parser.LoadElf(&e, *binpathFlag)
+		symnames := e.GetSymbolNames()
+		if symnames != nil {
+			for i := 0; i < e.GetNumberOfSymbols(); i++ {
+				log.Println(symnames[i])
+			}
+		}
+	*/
 	// convert gostirng to cstring
-	log.Println("debug::string table ::: \n ", string(e.Strtab))
-	log.Println("debug::string table ::: \n ", e.Strtab)
 }

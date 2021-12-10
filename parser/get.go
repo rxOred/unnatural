@@ -1,15 +1,18 @@
 package parser
 
 import (
+	"bytes"
 	"debug/elf"
 	"errors"
-	"log"
 	"strconv"
 )
 
 func (e *ElfFile) GetSymbolNameByIndex(index uint32) (string, error) {
-	log.Println("[log]", string(e.Strtab[index]))
-	return string(e.Strtab[index]), nil
+	b := e.Strtab[index:]
+	n := bytes.Index(b, []byte{0})
+	s := string(b[:n])
+	//log.Println("[log]", s)
+	return s, nil
 }
 
 func (e *ElfFile) GetSymbolNames() []string {
