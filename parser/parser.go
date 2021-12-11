@@ -6,6 +6,8 @@ import (
 	"errors"
 	"os"
 
+	"log"
+
 	"github.com/ghostiam/binstruct"
 )
 
@@ -36,10 +38,10 @@ func (e *ElfFile) ParseStringTable() error {
 }
 
 func (e *ElfFile) ParseSymbolTable() error {
-	for i := 0; i < int(e.ElfHeader.EShnum); i++ {
+	for i := 0; uint16(i) < e.ElfHeader.EShnum; i++ {
 		if e.Shdr[i].ShType == uint32(elf.SHT_SYMTAB) {
-			for i := 0; i < (int(e.Shdr[i].ShSize) / int(e.Shdr[i].ShEntsize)); i++ {
-				e.File.Seek(int64(e.Shdr[i].ShOffset), os.SEEK_SET)
+			for j := 0; uint64(j) < e.Shdr[i].ShSize/e.Shdr[i].ShEntsize; j++ {
+				e.File.Seek(int64(e.Shdr[i].ShOffset)+(int64(e.Shdr[i].ShEntsize)*int64(j)), os.SEEK_SET)
 				decoder := binstruct.NewDecoder(e.File, binary.LittleEndian)
 				symtab := new(Sym)
 				err := decoder.Decode(symtab)
@@ -100,6 +102,7 @@ func LoadElf(e *ElfFile, pathname string) error {
 
 	err = e.ParseSymbolTable()
 	if err != nil {
+		log.Println(err.Error())
 		e.Symtab = nil
 	}
 

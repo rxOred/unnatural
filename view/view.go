@@ -2,13 +2,11 @@ package view
 
 import (
 	"fmt"
-	"strconv"
 
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
-	"github.com/rxOred/unnatural/analyser"
-	disinfect "github.com/rxOred/unnatural/disinfect"
 	parser "github.com/rxOred/unnatural/parser"
+	scanner "github.com/rxOred/unnatural/scanner"
 )
 
 // Analysis view
@@ -149,8 +147,8 @@ func (av *AnalysisView) StartAnalysis() error {
 	ui.Render(av.a_grid)
 
 	// detect segment padding infections
-	r := analyser.CheckSegmentInfections(av.a_elf.File)
-	if r.R_class == analyser.ELF_TEXT_PADDING {
+	r := scanner.CheckSegmentInfections(&av.a_elf)
+	if r.R_class == scanner.ELF_TEXT_PADDING {
 		for i := 0; i < len(r.R_info); i++ {
 			av.a_analysis_report.Rows = append(av.a_analysis_report.Rows, r.R_info[i])
 		}
@@ -161,6 +159,7 @@ func (av *AnalysisView) StartAnalysis() error {
 	return nil
 }
 
+/*
 func (av *AnalysisView) StartDisInfection() error {
 	if r := disinfect.DisinfectTextPaddingInfection(av.a_elf); r != nil {
 		for i := 0; i < len(r); i++ {
@@ -181,6 +180,7 @@ func (av *AnalysisView) StartDisInfection() error {
 	disinfect.SaveFile(av.a_elf)
 	return nil
 }
+*/
 
 func InitAnalysisWidgets(av *AnalysisView, ev *ErrorView, pathname string) {
 	text := fmt.Sprintf("\t\tunnatural - Elf anomaly detector and disinfector\t\t\nTarget: %s", pathname)
@@ -204,16 +204,14 @@ func InitAnalysisWidgets(av *AnalysisView, ev *ErrorView, pathname string) {
 		ShowErrorView(ev, err.Error())
 	}
 
+	// use a channel and threads to manage these
 	increasePercent(10, av.a_guage)
 
 	av.a_elf_header_list.Rows = av.a_elf.GetElfHeader()
-	av.a_section_list.Rows, err = av.a_elf.GetSectionNames()
-	if err != nil {
-		av.a_section_list.Rows = append(av.a_section_list.Rows, "")
-	}
-	av.a_symbol_list.Rows =
+	av.a_section_list.Rows = av.a_elf.GetSectionNames()
+	av.a_symbol_list.Rows = av.a_elf.GetSymbolNames()
 
-		increasePercent(10, av.a_guage)
+	increasePercent(10, av.a_guage)
 }
 
 // clear screen, render the UI, start eventloop

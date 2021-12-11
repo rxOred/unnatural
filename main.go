@@ -49,4 +49,15 @@ func main() {
 
 	// Show Analysis view to the user
 	view.ShowAnalysisView(&av, &ev)
+	/*
+		var e parser.ElfFile
+		parser.LoadElf(&e, *binpathFlag)
+		symnames := e.GetSymbolNames()
+		if symnames != nil {
+			for i := 0; i < e.GetNumberOfSymbols(); i++ {
+				log.Println(symnames[i])
+			}
+		}
+	*/
+	// convert gostirng to cstring
 }

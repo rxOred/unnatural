@@ -1,8 +1,10 @@
-package analyser
+package scanner
 
 import (
 	"debug/elf"
 	"strconv"
+
+	parser "github.com/rxOred/unnatural/parser"
 )
 
 // infection class
@@ -17,20 +19,19 @@ const (
 type Report struct {
 	// infection classification
 	R_class Class
-
 	// this depends on the infection technique
 	R_info []string
 }
 
-// we dont need parser.Elf cause we only need the elf binary
-func CheckSegmentInfections(f *elf.File) Report {
+func CheckSegmentInfections(e *parser.ElfFile) Report {
 	var r Report
-
 	// text padding infection
-	for i := 0; i < len(f.Progs); i++ {
-		if f.Progs[i].Type == elf.PT_LOAD && f.Progs[i].Flags == elf.PF_R|elf.PF_X {
-			if f.Entry > f.Progs[i].Vaddr {
-
+	for i := 0; i < len(e.Phdr); i++ {
+		if elf.ProgType(e.Phdr[i].PType) == elf.PT_LOAD && elf.ProgFlag(e.Phdr[i].PFlags) == elf.PF_R|elf.PF_X {
+			if e.ElfHeader.EEntry > e.Phdr[i].PVaddr {
+				for j := 0; i < len(e.Shdr); i++ {
+					if e.GetSectionNameByIndex(j) == ".fini" && e.Shdr[j].ShFlags == uint64(elf.SHF_ALLOC )
+				}
 				// more code here
 				// init the structure, assign values, then return
 				r = Report{
@@ -38,25 +39,24 @@ func CheckSegmentInfections(f *elf.File) Report {
 					R_info: []string{
 						"[DETECTED] classification : text padding infection",
 						"Reasons for above conclusion :",
-						"Entry point : 0x" + strconv.FormatUint(uint64(f.Entry), 16),
-						"Text Segment address : 0x" + strconv.FormatUint(uint64(f.Progs[i].Vaddr), 16),
+						"Entry point : 0x" + strconv.FormatUint(uint64(e.ElfHeader.EEntry), 16),
+						"Text Segment address : 0x" + strconv.FormatUint(uint64(e.Phdr[i].PVaddr), 16),
 						"",
 					},
 				}
 				return r
 			}
 		}
-
 		// data segment padding infection
-		if f.Progs[i].Type == elf.PT_LOAD && f.Progs[i].Flags == elf.PF_W|elf.PF_R {
-			if f.Entry > f.Progs[i].Vaddr {
+		if elf.ProgType(e.Phdr[i].PType) == elf.PT_LOAD && elf.ProgFlag(e.Phdr[i].PFlags) == elf.PF_W|elf.PF_R {
+			if e.ElfHeader.EEntry > e.Phdr[i].PVaddr {
 				r = Report{
 					R_class: ELF_TEXT_PADDING,
 					R_info: []string{
 						"[DECTED] classification : data segment infection",
 						"reasons for above conclusion :",
-						"Entry point : 0x" + strconv.FormatUint(uint64(f.Entry), 16),
-						"Data Segment address : 0x" + strconv.FormatUint(uint64(f.Progs[i].Vaddr), 16),
+						"Entry point : 0x" + strconv.FormatUint(uint64(e.ElfHeader.EEntry), 16),
+						"Data Segment address : 0x" + strconv.FormatUint(uint64(e.Phdr[i].PVaddr), 16),
 						"",
 					},
 				}
