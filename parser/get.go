@@ -7,12 +7,11 @@ import (
 	"strconv"
 )
 
-func (e *ElfFile) GetSymbolNameByIndex(index uint32) (string, error) {
+func (e *ElfFile) GetSymbolNameByIndex(index uint32) string {
 	b := e.Strtab[index:]
 	n := bytes.Index(b, []byte{0})
 	s := string(b[:n])
-	//log.Println("[log]", s)
-	return s, nil
+	return s
 }
 
 func (e *ElfFile) GetSymbolNames() []string {
@@ -23,11 +22,7 @@ func (e *ElfFile) GetSymbolNames() []string {
 	}
 	//log.Println(noOfSyms)
 	for i := 0; i < noOfSyms; i++ {
-		name, err := e.GetSymbolNameByIndex(e.Symtab[i].StName)
-		str = append(str, name)
-		if err != nil {
-			continue
-		}
+		str = append(str, e.GetSymbolNameByIndex(e.Symtab[i].StName))
 	}
 	return str
 }
@@ -55,7 +50,10 @@ func (e *ElfFile) GetSectionNames() []string {
 }
 
 func (e *ElfFile) getSectionName(index uint32) string {
-	return string(e.shstrtab[index])
+	b := e.shstrtab[index:]
+	n := bytes.Index(b, []byte{0})
+	s := string(b[:n])
+	return s
 }
 
 func (e *ElfFile) GetSectionNameByIndex(index uint32) (string, error) {
@@ -66,7 +64,6 @@ func (e *ElfFile) GetSectionNameByIndex(index uint32) (string, error) {
 	if uint32(e.Shdr[e.ElfHeader.EShstrndx].ShSize) < index {
 		return "", errors.New("index out of range")
 	}
-
 	return e.getSectionName(index), nil
 }
 
@@ -81,7 +78,6 @@ func (e *ElfFile) GetSectionIndexByName(name string) (int, error) {
 			return i, nil
 		}
 	}
-
 	return -1, nil
 }
 
@@ -91,7 +87,6 @@ func (e *ElfFile) GetSegmentByType(ptype uint32) (*Phdr, error) {
 			return e.Phdr[i], nil
 		}
 	}
-
 	return nil, errors.New("Segment not found")
 }
 
@@ -105,7 +100,6 @@ func (e *ElfFile) GetNSegmentByType(ptype uint32, n int) (*Phdr, error) {
 			}
 		}
 	}
-
 	return nil, errors.New("Segment not found")
 }
 
@@ -113,44 +107,43 @@ func (e *ElfFile) GetElfHeader() []string {
 	var str []string
 	switch e.ElfHeader.EType {
 	case uint16(elf.ET_REL):
-		str = append(str, elf.ET_REL.String())
+		str = append(str, "Type :"+elf.ET_REL.String())
 	case uint16(elf.ET_EXEC):
-		str = append(str, elf.ET_EXEC.String())
+		str = append(str, "Type :"+elf.ET_EXEC.String())
 	case uint16(elf.ET_DYN):
-		str = append(str, elf.ET_DYN.String())
+		str = append(str, "Type :"+elf.ET_DYN.String())
 	case uint16(elf.ET_CORE):
-		str = append(str, elf.ET_CORE.String())
+		str = append(str, "Type :"+elf.ET_CORE.String())
 	default:
-		str = append(str, "NONE")
+		str = append(str, "Type :"+"NONE")
 	}
 
 	switch e.ElfHeader.EMachine {
 	case uint16(elf.EM_386):
-		str = append(str, elf.EM_386.String())
+		str = append(str, "Machine :"+elf.EM_386.String())
 	case uint16(elf.EM_MIPS):
-		str = append(str, elf.EM_MIPS.String())
+		str = append(str, "Machine :"+elf.EM_MIPS.String())
 	case uint16(elf.EM_ARM):
-		str = append(str, elf.EM_ARM.String())
+		str = append(str, "Machine :"+elf.EM_ARM.String())
 	case uint16(elf.EM_X86_64):
-		str = append(str, elf.EM_X86_64.String())
+		str = append(str, "Machine :"+elf.EM_X86_64.String())
 	default:
-		str = append(str, "NONE")
+		str = append(str, "Machine :"+"NONE")
 	}
 
 	switch e.ElfHeader.EVersion {
 	case uint32(elf.EV_CURRENT):
-		str = append(str, elf.EV_CURRENT.String())
+		str = append(str, "Version :"+elf.EV_CURRENT.String())
 	default:
-		str = append(str, elf.EV_NONE.String())
+		str = append(str, "Version :"+elf.EV_NONE.String())
 	}
 
-	str = append(str, strconv.FormatUint(e.ElfHeader.EEntry, 16))
-	str = append(str, strconv.FormatUint(e.ElfHeader.EPhoff, 16))
-	str = append(str, strconv.FormatUint(e.ElfHeader.EShoff, 16))
-	str = append(str, strconv.FormatUint(uint64(e.ElfHeader.EPhnum), 10))
-	str = append(str, strconv.FormatUint(uint64(e.ElfHeader.EShnum), 10))
-	str = append(str, strconv.FormatUint(uint64(e.ElfHeader.EShstrndx), 10))
-
+	str = append(str, "Entry :"+strconv.FormatUint(e.ElfHeader.EEntry, 16))
+	str = append(str, "Phoff :"+strconv.FormatUint(e.ElfHeader.EPhoff, 16))
+	str = append(str, "Shoff :"+strconv.FormatUint(e.ElfHeader.EShoff, 16))
+	str = append(str, "Phnum :"+strconv.FormatUint(uint64(e.ElfHeader.EPhnum), 10))
+	str = append(str, "Shnum :"+strconv.FormatUint(uint64(e.ElfHeader.EShnum), 10))
+	str = append(str, "Shstrndx :"+strconv.FormatUint(uint64(e.ElfHeader.EShstrndx), 10))
 	return str
 }
 
@@ -223,7 +216,6 @@ func (e *ElfFile) GetSectionHeaders() ([][]string, error) {
 
 		hdrtab = append(hdrtab, str)
 	}
-
 	return hdrtab, nil
 }
 
@@ -276,6 +268,5 @@ func (e *ElfFile) GetProgHeaders() [][]string {
 		str[7] = strconv.FormatInt(int64(e.Phdr[i].PAlign), 16)
 		hdrtab = append(hdrtab, str)
 	}
-
 	return hdrtab
 }
