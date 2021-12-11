@@ -5,6 +5,7 @@ import (
 
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
+	"github.com/rxOred/unnatural/analyser"
 	parser "github.com/rxOred/unnatural/parser"
 )
 
@@ -140,7 +141,6 @@ func (av *AnalysisView) SetupAnalysisGrid() error {
 	return nil
 }
 
-/*
 func (av *AnalysisView) StartAnalysis() error {
 	increasePercent(3, av.a_guage)
 	av.a_guage.Title = "Analysing"
@@ -159,6 +159,7 @@ func (av *AnalysisView) StartAnalysis() error {
 	return nil
 }
 
+/*
 func (av *AnalysisView) StartDisInfection() error {
 	if r := disinfect.DisinfectTextPaddingInfection(av.a_elf); r != nil {
 		for i := 0; i < len(r); i++ {
