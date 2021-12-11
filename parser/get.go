@@ -7,6 +7,10 @@ import (
 	"strconv"
 )
 
+func (e *ElfFile) GetSectionFlagsByIndex(index uint32) string {
+	return ""
+}
+
 func (e *ElfFile) GetSymbolNameByIndex(index uint32) string {
 	b := e.Strtab[index:]
 	n := bytes.Index(b, []byte{0})

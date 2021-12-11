@@ -29,7 +29,9 @@ func CheckSegmentInfections(e *parser.ElfFile) Report {
 	for i := 0; i < len(e.Phdr); i++ {
 		if elf.ProgType(e.Phdr[i].PType) == elf.PT_LOAD && elf.ProgFlag(e.Phdr[i].PFlags) == elf.PF_R|elf.PF_X {
 			if e.ElfHeader.EEntry > e.Phdr[i].PVaddr {
-
+				for j := 0; i < len(e.Shdr); i++ {
+					if e.GetSectionNameByIndex(j) == ".fini" && e.Shdr[j].ShFlags == uint64(elf.SHF_ALLOC )
+				}
 				// more code here
 				// init the structure, assign values, then return
 				r = Report{
