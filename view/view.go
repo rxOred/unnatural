@@ -5,8 +5,8 @@ import (
 
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
-	"github.com/rxOred/unnatural/analyser"
 	parser "github.com/rxOred/unnatural/parser"
+	scanner "github.com/rxOred/unnatural/scanner"
 )
 
 // Analysis view
@@ -147,8 +147,8 @@ func (av *AnalysisView) StartAnalysis() error {
 	ui.Render(av.a_grid)
 
 	// detect segment padding infections
-	r := analyser.CheckSegmentInfections(av.a_elf.File)
-	if r.R_class == analyser.ELF_TEXT_PADDING {
+	r := scanner.CheckSegmentInfections(&av.a_elf)
+	if r.R_class == scanner.ELF_TEXT_PADDING {
 		for i := 0; i < len(r.R_info); i++ {
 			av.a_analysis_report.Rows = append(av.a_analysis_report.Rows, r.R_info[i])
 		}
