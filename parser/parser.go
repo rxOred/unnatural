@@ -18,7 +18,7 @@ type ElfFile struct {
 	Shdr      []*Shdr  // section header table
 	Symtab    []*Sym   // symbol table
 	Strtab    []byte   // string table
-	shstrtab  []byte   // section header string table.
+	shstrtab  []byte   // section header string table
 }
 
 func (e *ElfFile) ParseDynamicSections() error {
