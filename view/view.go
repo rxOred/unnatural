@@ -148,10 +148,8 @@ func (av *AnalysisView) StartAnalysis() error {
 
 	// detect segment padding infections
 	r := scanner.CheckSegmentInfections(&av.a_elf)
-	if r.R_class == scanner.ELF_TEXT_PADDING {
-		for i := 0; i < len(r.R_info); i++ {
-			av.a_analysis_report.Rows = append(av.a_analysis_report.Rows, r.R_info[i])
-		}
+	for i := 0; i < len(r.R_info); i++ {
+		av.a_analysis_report.Rows = append(av.a_analysis_report.Rows, r.R_info[i])
 	}
 	increasePercent(3, av.a_guage)
 	ui.Render(av.a_grid)
