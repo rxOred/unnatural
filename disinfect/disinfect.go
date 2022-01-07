@@ -7,7 +7,15 @@ import (
 	parser "github.com/rxOred/unnatural/parser"
 )
 
-func DisinfectTextPaddingInfection(ef *parser.Elf) []string {
+func DisinfectTextPaddingInfection(e *parser.ElfFile) []string {
+	sec, err := e.GetSectionIndexByName(".init")
+	if err != nil || sec == -1 {
+
+	}
+}
+
+// dis infection
+func isinfectTextPaddingInfection(ef *parser.Elf) []string {
 	sec := ef.E_file.Section(".init")
 	for i := 0; i < len(ef.E_file.Progs); i++ {
 		if ef.E_file.Progs[i].Type == elf.PT_LOAD && ef.E_file.Progs[i].Flags == elf.PF_R|elf.PF_X {
